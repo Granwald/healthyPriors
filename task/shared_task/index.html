@@ -14,24 +14,7 @@
 	<script src="https://unpkg.com/@jspsych/plugin-call-function@1.1.0"></script>
 	<script src="robberTask.js"></script>
 	<script src="factoryTask.js"></script>
-	<script src="questionnaries/STAI.js"></script>
-	<script src="questionnaries/BIS_BAS.js"></script>
-	<script src="questionnaries/RAND36.js"></script>
-	<script src="questionnaries/PHQ9.js"></script>
-	<script src="questionnaries/PANAS.js"></script>
-	<script src="questionnaries/AMI.js"></script>
-	<script src="questionnaries/CESD.js"></script>
-	<script src="questionnaries/SHPS.js"></script>
-	<script src="questionnaries/SDS.js"></script>
-	<script src="questionnaries/IDSSR.js"></script>
-	<script src="questionnaries/PSWQ.js"></script>
-	<script src="questionnaries/GAD7.js"></script>
-	<script src="oMST.js"></script>
-	<script type="text/javascript" src="jspsych-7-pavlovia-2021_12.js"></script>
-
-	<script src="js/jquery-3.1.1.min.js"></script>
 	<script src="https://unpkg.com/@jspsych/plugin-categorize-image@1.1.0"></script>
-	<script src="js/plugin-categorize-image-buttons.js"></script>
 	<script src="https://unpkg.com/@jspsych/plugin-image-keyboard-response@1.1.0"></script>
 	<script src="https://unpkg.com/@jspsych/plugin-image-button-response@1.1.0"></script>
 	<script src="https://unpkg.com/@jspsych/plugin-video-button-response@1.1.0"></script>
@@ -44,18 +27,14 @@
       font-size: 150%;
     }
 	</style>
-</head>NAgentsInBlockcat
+</head>
 
 <body bgcolor='#c0c0c0'></body>
 <script type='text/javascript'>
 
-	const NCURL = "https://app.prolific.com/submissions/complete?cc=CL6DMEG3"
-	const FAURL = "https://app.prolific.com/submissions/complete?cc=C18M8VZ1"
-	const FCURL = "https://app.prolific.com/submissions/complete?cc=CKGYK35Q"
-	
 	const jsPsych = initJsPsych({
 		on_finish: function () {
-			window.location = FCURL;
+			window.close();
 		}
 	});
 
@@ -65,8 +44,8 @@
 	function generateNumberofTrialsAndAgents() {
 		let trialList1 = [4,4,4,5,5,8];
 		let trialList2 = [4,4,4,5,6,7];
-		trialList1 = jsPsych.randomization.repeat(trialList1,1); //  check randomizations to ensure that 4 is not repeated.
-		trialList2 = jsPsych.randomization.repeat(trialList2,1); // check so the randomization to ensure that 4 is not repeated. And 2 is not the first value
+		trialList1 = jsPsych.randomization.repeat(trialList1,1); 
+		trialList2 = jsPsych.randomization.repeat(trialList2,1); 
 		let NTrial = trialList1.concat(trialList2);
 
 		NTrial = NTrial.concat(NTrial);
@@ -101,7 +80,6 @@
 			return taskOrderRnd
 		}
 	}
-
 	const taskOrderRnd = generateTaskOrder();
 
 	let catchTrialNBlocked = [jsPsych.randomization.randomInt(2, 11),jsPsych.randomization.randomInt(2, 11),jsPsych.randomization.randomInt(2, 11), jsPsych.randomization.randomInt(2, 11)];
@@ -117,6 +95,8 @@
 	probWin = probWin.map(x => (x)/((NAgentsInBlock+2)-1))
 	probWin.pop()//remove 100% prob
 	probWin.shift()//remove 0% prob
+
+	
 	// timings
 	function ITI(mean = 1000, SD = 500) {
 		let time = jsPsych.randomization.sampleNormal(mean, SD)
@@ -155,7 +135,6 @@
 	const factoryIEStim = `img/alarmlight.png`;
 	const factoryPracticeStim = [`img/practiceMachine1.png`,`img/practiceMachine2.png`,`img/practiceMachine3.png`,`img/practiceMachine4.png`];
 	const factoryPracticeStimShuffled = jsPsych.randomization.repeat(factoryPracticeStim, 1);
-
 
 	let factoryListShuffled = []
 	let robberListShuffled = []
@@ -275,7 +254,6 @@
 	let offersArrayFactory = factoryValueMatrix[0].concat(factoryValueMatrix[1], factoryValueMatrix[2])
 	let costFactory = factoryCostMatrix[0].concat(factoryCostMatrix[1], factoryCostMatrix[2])
 
-
 	offersArrayFactory = offersArrayFactory.map(function (each_element) { // Now we round the IEs to remove decimals
 		return Number(each_element.toFixed(0));
 	});
@@ -289,10 +267,8 @@
 
 	let noActValueFactory = offersArrayFactory.map(x => -x);
 
-
 	let probWinActFactory = repeatArray(probWin, NAgentsInBlock/probWin.length);
 	probWinActFactory = jsPsych.randomization.sampleWithoutReplacement(probWinActFactory, NAgentsInBlock)
-
 
 	offersArrayFactory = offersArrayFactory.concat(offersArrayFactory);
 	costsArrayFactory = costsArrayFactory.concat(costsArrayFactory);
@@ -300,24 +276,12 @@
 	probWinActFactory = probWinActFactory.concat(probWinActFactory);
 
 
-	
 	//##########//#//##//////##//######//#///////#//##////#//######/////////####///######///####///#//##////#//////////////////////////////////////////
 	//////#///////#//#/#////#/#//#///////#///////#//#/#///#//#//////////////#///#//#///////#///////#//#/#///#//////////////////////////////////////////
 	//////#///////#//#//#//#//#//#####///#///////#//#//#//#//#####//////////####///####////#//##///#//#//#//#//////////////////////////////////////////
 	//////#///////#//#///##///#//#///////#///////#//#///#/#//#//////////////#///#//#///////#////#//#//#///#/#//////////////////////////////////////////
 	//////#///////#//#////////#//######//######//#//#////##//######/////////####///######///####///#//#////##//////////////////////////////////////////
 	let timeline = [];
-
-	
-	let pavlovia_init = {
-		type: jsPsychPavlovia,
-		command: "init",
-		setPavloviaInfo: function (info) {
-			console.log(info);
-			pavloviaInfo = info;
-		}
-	};
-	timeline.push(pavlovia_init)
 	
 	const welcome = {
 		type: jsPsychHtmlKeyboardResponse,
@@ -425,7 +389,7 @@
 		},
 		on_finish: function (data) {
 			if (data.response == 1) {
-				return window.location = NCURL
+				window.close()
 			}
 		}
 	};
@@ -460,7 +424,6 @@
 		fullscreen_mode: true
 	}
 	timeline.push(enterFullscreen);
-
 
 	let genInstructionBlockedRobberFactory = {
 		type: jsPsychHtmlKeyboardResponse,
@@ -510,11 +473,7 @@
 		]
 
 	};
-
-
 	timeline.push(genInstructionBlockedRobberFactory);
-
-
 
 	for (let k = 0; k < taskOrderRnd.length; k++) {
 
@@ -601,7 +560,7 @@
 			choices: ` `,
 			trial_duration: 100000,
 			on_finish: function(){
-				return window.location = FAURL;
+				window.close();
 			},					
 		}
 
@@ -609,7 +568,6 @@
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////// ROBBER TASK ////////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 		if (taskOrderRnd[k] == 0) {
 
 			// instructions
@@ -624,8 +582,7 @@
 					let rndTrialIndex = jsPsych.randomization.randomInt(0, (sumTrials-1));
 					timeline.push(robberTrial(robberPracticeStimShuffled[i], offersArrayRobber[rndTrialIndex], practiceTrialProbs[practiceTrialListRobber[i]], costsArrayRobber[rndTrialIndex], noActValueRobber[rndTrialIndex], 0, practiceITI(), "NA", practiceMaxRT, practiceDelibT, "NA", 1));
 				}
-			}
-			
+			}			
 			timeline.push(infoBeforeStart)
 			timeline.push(catchTrial);
 
@@ -700,7 +657,6 @@
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////// FACTORY TASK ///////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 		if (taskOrderRnd[k] == 1) {
 
 			// instructions
@@ -784,21 +740,16 @@
 				}
 			};
 			timeline.push(factoryEndTask);
-
 		};	
-
 
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		/////////////////////////////////////// ROBBER TASK  2///////////////////////////////////////////////////////
 		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 		if (taskOrderRnd[k] == 2) {
 
 			//instructions
 			let isFirstTime = false;
 			timeline.push(robberTaskInfo(Math.min(...robberValueArray), Math.max(...robberValueArray), Math.min(...costsArrayRobber), Math.max(...costsArrayRobber), isFirstTime));
-
-
 
 			//Practice trial
 			timeline.push(infoBeforeStart)
@@ -875,13 +826,10 @@
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////// FACTORY TASK 2///////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 		if (taskOrderRnd[k] == 3) {
 			let isFirstTime = false;
 			//instructions
 			timeline.push(factoryTaskInfo(Math.min(...offersArrayFactory), Math.max(...offersArrayFactory), Math.min(...costsArrayFactory), Math.max(...costsArrayFactory), isFirstTime));
-
 			timeline.push(infoBeforeStart)
 			timeline.push(catchTrial);
 
@@ -950,103 +898,15 @@
 				}
 			};
 			timeline.push(factoryEndTask);
-
 		};	
 	};
 	
-
-
-	////////////////////////////////////###////#/////#//#####///####///###########//#////####////#//////#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////#///#///#/////#//#//////#////////////#///////#///#////#///###////#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////#/////#//#/////#//#//////#////////////#///////#//#/////#///#//#///#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//////////////////////////////////#///#/#//#/////#//####////####////////#///////#//#/////#///#///#//#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	///////////////////////////////////#///#////#///#///#///////////#///////#///////#///#///#////#////#/#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	////////////////////////////////////###/#////###////#####///####////////#///////#////###/////#/////##//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	let introQuestionnaries = {
-		type: jsPsychHtmlKeyboardResponse,
-		stimulus: `<div class ='textDivGen'>
-					<p>You have now completed the first part of the experiment, we now ask that you answer some questionnaires. There are no right or wrong answers, so please answer as truthfully as possible.
-					<br/>
-					Press the spacebar to continue</p>
-				</div>`,
-		choices: ` `,
-		data: {
-			category: `misc`,
-		},
-	};
-	timeline.push(introQuestionnaries);
-
-	
-	let questionnaires = [];
-
-	// Randomize which 6 questionnaires will have attention checks 
-	let includeAttentionChecksQ = [1,1,1,1,1,1,0,0,0,0,0,0,0] //1 = attention check, 0 = no attention check
-	includeAttentionChecksQ = jsPsych.randomization.repeat(includeAttentionChecksQ,1) //shuffle array
-
-	// ANXIETY/WORRY QUESTIONNAIRES
-	//State-trait anxiety index
-	questionnaires.push(qSTAI1(includeAttentionChecksQ[0]));
-	questionnaires.push(qSTAI2(includeAttentionChecksQ[1]));
-	//Generalized Anxiety Disorder 7-item scale
-	questionnaires.push(GAD7(includeAttentionChecksQ[2]));
-	//The Penn State Worry Questionnaire (PSWQ) 
-	questionnaires.push(PSWQ(includeAttentionChecksQ[3]));
-
-	// APATHY/ANHEDONIA RELATED QUESTIONNAIRES
-	//BIS/BAS
-	questionnaires.push(BIS_BAS(includeAttentionChecksQ[4]));
-	//Apathy Motivation Index
-	questionnaires.push(AMI(includeAttentionChecksQ[5]));
-	//Snaith-Hamilton Pleasure Scale (SHAPS)
-	questionnaires.push(SHPS(includeAttentionChecksQ[6]));
-
-	// DEPRESSION QUESTIONNAIRES 
-	//Patient Health Questionnaire 9
-	questionnaires.push(PHQ9(includeAttentionChecksQ[7]));
-	//Center for Epidemiologic Studies Depression Scale
-	questionnaires.push(CESD(includeAttentionChecksQ[8]));
-	//INVENTORY OF DEPRESSIVE SYMPTOMATOLOGY (SELF-REPORT) (IDS-SR)
-	questionnaires.push(IDSSR(includeAttentionChecksQ[9]));
-	//Zung Self-Rating Depression Scale (SDS) 
-	questionnaires.push(SDS(includeAttentionChecksQ[10]));
-
-	// GENERAL AFFECT
-	//Positive Negative affect shedule
-	questionnaires.push(PANAS(includeAttentionChecksQ[11]));
-
-	// GENERAL HEALTH
-	//RAND 36
-	questionnaires.push(RAND36(includeAttentionChecksQ[12]));
-
-	questionnaires =  jsPsych.randomization.repeat(questionnaires,1); // shuffle order of questionnaire presentation
-
-	timeline =  timeline.concat(questionnaires);
-
-	let introOMST = {
-		type: jsPsychHtmlKeyboardResponse,
-		stimulus: `<div class ='textDivGen'>
-					<p>You have now completed all questionnaires. We now ask you to complete another very short task.
-					<br/>
-					Press the spacebar to continue</p>
-				</div>`,
-		choices: ` `,
-		data: {
-			category: `misc`,
-		},
-	};
-	timeline.push(introOMST);
-
-
-	timeline = timeline.concat(oMST())
-
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//////////////////////////////////////////////////// END SCREEN ///////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 	let exitFullscreen = {
 		type: jsPsychFullscreen,
 		fullscreen_mode: false,
@@ -1067,20 +927,6 @@
 		},
 	};
 	timeline.push(endScreen);
-
-
-	let pavlovia_finish = {
-		type: jsPsychPavlovia,
-		command: "finish",
-		participantId: "JSPSYCH-V1",
-		dataFilter: function (data) {
-			return data;
-		},
-		completedCallback: function () {
-			alert('data successfully submitted!');
-		}
-	};
-	timeline.push(pavlovia_finish);
 
 	jsPsych.run(timeline);
 
