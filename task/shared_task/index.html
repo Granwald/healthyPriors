@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Decision-making in Different Situations</title>
+	<meta charset="UTF-8">
+	<script src="https://unpkg.com/jspsych@7.1.0"> </script>
+	<script src="https://unpkg.com/@jspsych/plugin-html-keyboard-response@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-html-button-response@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-survey-text@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-survey-multi-choice@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-fullscreen@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-preload@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-call-function@1.1.0"></script>
+	<script src="robberTask.js"></script>
+	<script src="factoryTask.js"></script>
+	<script src="questionnaries/STAI.js"></script>
+	<script src="questionnaries/BIS_BAS.js"></script>
+	<script src="questionnaries/RAND36.js"></script>
+	<script src="questionnaries/PHQ9.js"></script>
+	<script src="questionnaries/PANAS.js"></script>
+	<script src="questionnaries/AMI.js"></script>
+	<script src="questionnaries/CESD.js"></script>
+	<script src="questionnaries/SHPS.js"></script>
+	<script src="questionnaries/SDS.js"></script>
+	<script src="questionnaries/IDSSR.js"></script>
+	<script src="questionnaries/PSWQ.js"></script>
+	<script src="questionnaries/GAD7.js"></script>
+	<script src="oMST.js"></script>
+	<script type="text/javascript" src="jspsych-7-pavlovia-2021_12.js"></script>
+
+	<script src="js/jquery-3.1.1.min.js"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-categorize-image@1.1.0"></script>
+	<script src="js/plugin-categorize-image-buttons.js"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-image-keyboard-response@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-image-button-response@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-video-button-response@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-video-keyboard-response@1.1.0"></script>
+	<script src="https://unpkg.com/@jspsych/plugin-browser-check@1.0.2"></script>
+	<link href="https://unpkg.com/jspsych@7.1.2/css/jspsych.css" rel="stylesheet" type="text/css" />
+	<link href="experimentStyleSheet.css" rel="stylesheet" type="text/css" />
+	<style>
+	.jspsych-btn {
+      font-size: 150%;
+    }
+	</style>
+</head>NAgentsInBlockcat
+
+<body bgcolor='#c0c0c0'></body>
+<script type='text/javascript'>
+
+	const NCURL = "https://app.prolific.com/submissions/complete?cc=CL6DMEG3"
+	const FAURL = "https://app.prolific.com/submissions/complete?cc=C18M8VZ1"
+	const FCURL = "https://app.prolific.com/submissions/complete?cc=CKGYK35Q"
+	
+	const jsPsych = initJsPsych({
+		on_finish: function () {
+			window.location = FCURL;
+		}
+	});
+
+	/// TASK GENERAL SETTINGS
+	const isDay1 = true
+
+	function generateNumberofTrialsAndAgents() {
+		let trialList1 = [4,4,4,5,5,8];
+		let trialList2 = [4,4,4,5,6,7];
+		trialList1 = jsPsych.randomization.repeat(trialList1,1); //  check randomizations to ensure that 4 is not repeated.
+		trialList2 = jsPsych.randomization.repeat(trialList2,1); // check so the randomization to ensure that 4 is not repeated. And 2 is not the first value
+		let NTrial = trialList1.concat(trialList2);
+
+		NTrial = NTrial.concat(NTrial);
+		return NTrial;
+
+	}
+	
+	let NTrialR = generateNumberofTrialsAndAgents();
+	let NTrialF = generateNumberofTrialsAndAgents();
+
+	const NAgentsInBlock = Object.keys(NTrialR).length/2
+	const sumTrials = NTrialR.reduce((partialSum, a) => partialSum + a, 0);
+
+	const repeatArray = (arr, n) => [].concat(...Array(Math.ceil(n)).fill(arr));
+
+	const maxMissedTrials = 20;
+	const NPracticeTrial = 18;
+
+	let practiceTrialList = [0,1,2,3];
+	let practiceTrials = [4,4,4,6];
+	let practiceTrialProbs = [0.8,0.2,0.5,0.5];
+
+	let practiceTrialListRobber = jsPsych.randomization.repeat(practiceTrialList,1)
+	let practiceTrialListFactory = jsPsych.randomization.repeat(practiceTrialList,1)
+
+	function generateTaskOrder(){
+		const taskOrder = [0, 1];
+		const taskOrderRnd = jsPsych.randomization.repeat(taskOrder, 1);
+		if(isDay1){
+			return taskOrderRnd.concat((taskOrderRnd.map(x => (x+2))))
+		} else {
+			return taskOrderRnd
+		}
+	}
+
+	const taskOrderRnd = generateTaskOrder();
+
+	let catchTrialNBlocked = [jsPsych.randomization.randomInt(2, 11),jsPsych.randomization.randomInt(2, 11),jsPsych.randomization.randomInt(2, 11), jsPsych.randomization.randomInt(2, 11)];
+
+	let EEarray = [...Array(20).keys()];
+	EEarray = EEarray.map(x => (x + 1) * 0.05);
+	EEarray.shift(); // remove first object
+	EEarray = EEarray.concat([2]) //add the extra endowments
+	
+	let probWin= [];
+
+	probWin = [...Array(NAgentsInBlock+2).keys()];
+	probWin = probWin.map(x => (x)/((NAgentsInBlock+2)-1))
+	probWin.pop()//remove 100% prob
+	probWin.shift()//remove 0% prob
+	// timings
+	function ITI(mean = 1000, SD = 500) {
+		let time = jsPsych.randomization.sampleNormal(mean, SD)
+		while (time < 0) {
+			time = jsPsych.randomization.sampleNormal(mean, SD)
+		}
+		return time
+	} //Inter trial interval in ms 
+	const IET = 3000; //Initial endowment time in ms
+	const maxRT = 10000; // max time participants have to response in ms
+	const delibT = 1000;
+	const outcomeT = 4000;
+	function practiceITI(mean = 1000, SD = 500) {
+		let time = jsPsych.randomization.sampleNormal(mean, SD)
+		while (time < 0) {
+			time = jsPsych.randomization.sampleNormal(mean, SD)
+		}
+		return time
+	}
+	const practiceDelibT = 3000;
+	const practiceMaxRT = 5000;
+	const catchTrialDuration = 10000;
+
+
+	/// STIMULI
+	const KILogo = `img/KILogo.png`;
+	const arrowLeftImg = `img/arrowLeft.png`;
+	const arrowRightImg = `img/arrowRight.png`;
+
+	const robberTrialInfoStim = `img/robberTrialInfo.png`
+	const robberIEStim = `img/waiter.png`;
+	const robberPracticeStim = [`img/practiceRobber1.png`,`img/practiceRobber2.png`,`img/practiceRobber3.png`,`img/practiceRobber4.png`];
+	const robberPracticeStimShuffled = jsPsych.randomization.repeat(robberPracticeStim, 1);	
+	
+	const factoryTrialInfoStim = `img/factoryTrialInfo.png`
+	const factoryIEStim = `img/alarmlight.png`;
+	const factoryPracticeStim = [`img/practiceMachine1.png`,`img/practiceMachine2.png`,`img/practiceMachine3.png`,`img/practiceMachine4.png`];
+	const factoryPracticeStimShuffled = jsPsych.randomization.repeat(factoryPracticeStim, 1);
+
+
+	let factoryListShuffled = []
+	let robberListShuffled = []
+	if(isDay1){
+		let robberList  = [`img/robber1.png`, `img/robber2.png`, `img/robber3.png`, `img/robber4.png`, `img/robber5.png`, `img/robber6.png`, `img/robber7.png`, `img/robber8.png`, `img/robber9.png`, `img/robber10.png`, `img/robber11.png`, `img/robber12.png`, `img/robber13.png`, `img/robber14.png`, `img/robber15.png`, `img/robber16.png`, `img/robber17.png`, `img/robber18.png`, `img/robber19.png`, `img/robber20.png`,`img/robber21.png`,`img/robber22.png`,`img/robber23.png`,`img/robber24.png`];
+		let factoryList = [`img/machine1.png`, `img/machine2.png`, `img/machine3.png`, `img/machine4.png`, `img/machine5.png`, `img/machine6.png`, `img/machine7.png`, `img/machine8.png`, `img/machine9.png`, `img/machine10.png`, `img/machine11.png`, `img/machine12.png`, `img/machine13.png`, `img/machine14.png`, `img/machine15.png`, `img/machine16.png`, `img/machine17.png`, `img/machine18.png`, `img/machine19.png`, `img/machine20.png`, `img/machine21.png`, `img/machine22.png`, `img/machine23.png`, `img/machine24.png`];
+		robberListShuffled  = jsPsych.randomization.repeat(robberList, 1);
+		factoryListShuffled = jsPsych.randomization.repeat(factoryList, 1);
+	} else {
+		let robberList  = [`img/robber25.png`,`img/robber26.png`,`img/robber27.png`,`img/robber28.png`,`img/robber29.png`,`img/robber30.png`,`img/robber31.png`,`img/robber32.png`,`img/robber33.png`,`img/robber34.png`,`img/robber35.png`,`img/robber36.png`,`img/robber37.png`,`img/robber38.png`,`img/robber39.png`,`img/robber40.png`,`img/robber41.png`,`img/robber42.png`,`img/robber43.png`,`img/robber44.png` ];
+		let factoryList = [`img/machine25.png`, `img/machine26.png`, `img/machine27.png`, `img/machine28.png`, `img/machine29.png`, `img/machine30.png`, `img/machine31.png`, `img/machine32.png`, `img/machine33.png`, `img/machine34.png`, `img/machine35.png`, `img/machine36.png`, `img/machine37.png`, `img/machine38.png`, `img/machine39.png`, `img/machine40.png`, `img/machine41.png`];
+		robberListShuffled = jsPsych.randomization.repeat(robberList, 1);
+		factoryListShuffled = jsPsych.randomization.repeat(factoryList, 1);
+	}
+
+	let images = [arrowLeftImg, arrowRightImg, robberIEStim, factoryIEStim] // add all images to an array to be able to preload them
+	images = images.concat(robberListShuffled, factoryListShuffled, robberPracticeStim, factoryPracticeStim)
+
+	// Robber Task
+	let costFight = 50;
+	const costNoFight = 0;
+
+	const initialEndowmentsRobber = EEarray.map(x => (costFight - costNoFight) / x);
+	
+	let valueIndex = Array.from(Array(initialEndowmentsRobber.length).keys())
+	let costTypeArray = [0, 1, 2]
+
+	let valueIndexMatrixR = [[jsPsych.randomization.repeat(valueIndex,1)], [jsPsych.randomization.repeat(valueIndex,1)],[jsPsych.randomization.repeat(valueIndex,1)]]
+
+	let percentageCostRobber = [0, 0.05, 0.15]
+	let setCostRobber = [75, 40, 10]
+
+	let costTypeValueRobber = []
+	for (let i = 0; i < valueIndex.length; i++) {
+		let temp = jsPsych.randomization.repeat(costTypeArray,1)
+		costTypeValueRobber.push(temp)		
+	}
+
+	let robberCostMatrix = [[],[],[]];
+	let robberValueMatrix = [[],[],[]];
+	
+	for (let j = 0; j < valueIndex.length; j++) {
+		for (let i= 0; i <costTypeArray.length; i++){
+			if (costTypeValueRobber[valueIndexMatrixR[i][0][j]][i]==0){
+				robberCostMatrix[i][j] = initialEndowmentsRobber[valueIndexMatrixR[i][0][j]] * percentageCostRobber[0] + setCostRobber[0]
+			}
+			if (costTypeValueRobber[valueIndexMatrixR[i][0][j]][i]==1) {
+				robberCostMatrix[i][j] = initialEndowmentsRobber[valueIndexMatrixR[i][0][j]] * percentageCostRobber[1] + setCostRobber[1]
+			} 
+			if (costTypeValueRobber[valueIndexMatrixR[i][0][j]][i]==2) {
+				robberCostMatrix[i][j] = initialEndowmentsRobber[valueIndexMatrixR[i][0][j]] * percentageCostRobber[2] + setCostRobber[2]
+			}
+			robberValueMatrix[i][j] = initialEndowmentsRobber[valueIndexMatrixR[i][0][j]]
+		}
+	}
+
+	let robberValueArray = robberValueMatrix[0].concat(robberValueMatrix[1] , robberValueMatrix[2]);
+	let costsRobber = robberCostMatrix[0].concat(robberCostMatrix[1],robberCostMatrix[2]);	
+
+	let offersArrayRobber = robberValueArray.map(function (each_element) { // Now we round the IEs to remove decimals
+		return Number(each_element.toFixed(0));
+	});
+
+	let costsArrayRobber = [];
+
+
+	costsArrayRobber = costsRobber;
+	costsArrayRobber = costsArrayRobber.map(function (each_element) { // Now we round the costs to remove decimals
+		return Number(each_element.toFixed(0));
+	});
+
+	let noActValueRobber = new Array(sumTrials).fill(0);
+
+	let probWinActRobber = repeatArray(probWin, NAgentsInBlock/probWin.length);
+	probWinActRobber = jsPsych.randomization.sampleWithoutReplacement(probWinActRobber, NAgentsInBlock)
+
+	offersArrayRobber = offersArrayRobber.concat(offersArrayRobber);
+	costsArrayRobber = costsArrayRobber.concat(costsArrayRobber);
+	noActValueRobber = noActValueRobber.concat(noActValueRobber);
+	probWinActRobber = probWinActRobber.concat(probWinActRobber);
+
+	//Factory task
+	const costRepair = 50;
+	const costNoRepair = 0;
+
+	const costLosingFactory = EEarray.map(x => (costRepair - costNoRepair) / x);
+
+	let percentageCostFactory = [0, 0.05, 0.1]
+	let setCostFactory = [100, 50, 0]
+
+	let valueIndexMatrixF = [[jsPsych.randomization.repeat(valueIndex,1)], [jsPsych.randomization.repeat(valueIndex,1)],[jsPsych.randomization.repeat(valueIndex,1)]]
+	let costTypeValueFactory = []
+	for (let i = 0; i < valueIndex.length; i++) {
+		let temp = jsPsych.randomization.repeat(costTypeArray,1)
+		costTypeValueFactory.push(temp)		
+	}
+
+	let factoryCostMatrix = [[], [], []]
+	let factoryValueMatrix = [[], [], []]	
+
+	for (let j = 0; j < valueIndex.length; j++) {
+		for (let i= 0; i <costTypeArray.length; i++){
+			if (costTypeValueFactory[valueIndexMatrixF[i][0][j]][i]==0){
+				factoryCostMatrix[i][j] = costLosingFactory[valueIndexMatrixF[i][0][j]] * percentageCostFactory[0] + setCostFactory[0]
+			}
+			if (costTypeValueFactory[valueIndexMatrixF[i][0][j]][i]==1) {
+				factoryCostMatrix[i][j] = costLosingFactory[valueIndexMatrixF[i][0][j]] * percentageCostFactory[1] + setCostFactory[1]
+			} 
+			if (costTypeValueFactory[valueIndexMatrixF[i][0][j]][i]==2){
+				factoryCostMatrix[i][j] = costLosingFactory[valueIndexMatrixF[i][0][j]] * percentageCostFactory[2] + setCostFactory[2]
+			}
+
+			factoryValueMatrix[i][j] = costLosingFactory[valueIndexMatrixF[i][0][j]]
+		}
+	}
+
+	let offersArrayFactory = factoryValueMatrix[0].concat(factoryValueMatrix[1], factoryValueMatrix[2])
+	let costFactory = factoryCostMatrix[0].concat(factoryCostMatrix[1], factoryCostMatrix[2])
+
+
+	offersArrayFactory = offersArrayFactory.map(function (each_element) { // Now we round the IEs to remove decimals
+		return Number(each_element.toFixed(0));
+	});
+
+	let costsArrayFactory = [];
+
+	costsArrayFactory = costFactory;
+	costsArrayFactory = costsArrayFactory.map(function (each_element) { // Now we round the costs to remove decimals
+		return Number(each_element.toFixed(0));
+	});
+
+	let noActValueFactory = offersArrayFactory.map(x => -x);
+
+
+	let probWinActFactory = repeatArray(probWin, NAgentsInBlock/probWin.length);
+	probWinActFactory = jsPsych.randomization.sampleWithoutReplacement(probWinActFactory, NAgentsInBlock)
+
+
+	offersArrayFactory = offersArrayFactory.concat(offersArrayFactory);
+	costsArrayFactory = costsArrayFactory.concat(costsArrayFactory);
+	noActValueFactory = noActValueFactory.concat(noActValueFactory);
+	probWinActFactory = probWinActFactory.concat(probWinActFactory);
+
+
+	
+	//##########//#//##//////##//######//#///////#//##////#//######/////////####///######///####///#//##////#//////////////////////////////////////////
+	//////#///////#//#/#////#/#//#///////#///////#//#/#///#//#//////////////#///#//#///////#///////#//#/#///#//////////////////////////////////////////
+	//////#///////#//#//#//#//#//#####///#///////#//#//#//#//#####//////////####///####////#//##///#//#//#//#//////////////////////////////////////////
+	//////#///////#//#///##///#//#///////#///////#//#///#/#//#//////////////#///#//#///////#////#//#//#///#/#//////////////////////////////////////////
+	//////#///////#//#////////#//######//######//#//#////##//######/////////####///######///####///#//#////##//////////////////////////////////////////
+	let timeline = [];
+
+	
+	let pavlovia_init = {
+		type: jsPsychPavlovia,
+		command: "init",
+		setPavloviaInfo: function (info) {
+			console.log(info);
+			pavloviaInfo = info;
+		}
+	};
+	timeline.push(pavlovia_init)
+	
+	const welcome = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: `<div class ='textDivGen'>
+				<p>Welcome! <br/>
+				Before we begin we ask you to read through the information on the next page and decide if you consent to participating in this experiment. <br>
+				Press the spacebar to continue.</p>
+				</div>`,
+		data: {
+			category: `instructions`,
+		},
+		choices: ` `,
+	};
+	timeline.push(welcome);
+
+	let consent = {
+		type: jsPsychHtmlButtonResponse,
+		stimulus: `<div class='consentContainerDiv'>
+				<img class='KILogoIMG' src ='${KILogo}' alt="Karolinska Institutet's logo">
+				<div class='textDivConsent'>
+					<h1>Informed consent <br></h1>
+
+					<p><b><u><br/>Project title: Quantifying prior beliefs about the world in decision-making</u></b></p>
+
+					<p><b><u><br/>Request to participate in a research study</u></b></p>
+					<p>We conduct research on decision-making and you are invited to take part as a research participant in this field. 
+					The entity principally responsible for the research (forskningshuvudman) is Karolinska Institutet in Sweden. 
+					Before you decide whether or not you wish to participate, it is important that you understand the background of the study and what participation entails. 
+					Therefore, please take your time to read through this information, and let us know if anything is unclear or if you require further information. </p>
+					
+					<p><b><br/>What does participation in this study entail?</b></p>
+					<div class='consentList'>
+						<ol>
+						<li style ='text-align:left;'>That you carefully read through this information and decide whether or not you wish to participate.</li> <br/>
+						<li style ='text-align:left;'>That you click the button 'I Accept' to give consent to participate in the experiment.</li> <br/>
+						<li style ='text-align:left;'>That you participate in an experiment wherein you are presented with different scenarios and make choices between different alternatives. 
+						As you do the task, your behavioural responses are recorded, as well as your web browser interactions.</li><br/>
+						<li style ='text-align:left;'>That you fill out a set of psychological questionnaires.</li><br/>
+						<li style ='text-align:left;'>That you, if asked, decide if you want to participate in the same experiment again.</li><br/>
+						</ol>
+					</div>
+					<p><b>The purpose of the study</b></p>
+					<p>The main purpose of this study is to investigate mechanisms of decision-making in healthy individuals. 
+					In the long run, we hope that our research will contribute to the understanding of both normal and problematic decision-making (e.g. in depression).</p>
+					
+					<p><b><br/>The outline of the study</b></p>
+					<p>The study involves one session. You will be asked to perform a computerized task, 
+					wherein you will be presented with different scenarios on a computer screen. 
+					An example of a scenario is: "You are in a factory where an accident is about to happen. 
+					If the accident takes place, you will incur a monetary loss. 
+					You can act to minimize the risk, but this entails a cost and it is not sure that you will manage to avoid the accident. 
+					You will be asked to choose between alternatives (act/not act) by pressing a button. You will never lose your own money during the task. 
+					You will receive an endowment at the beginning of the experiment and any eventual loss that you incur will be deducted from this endowment. 
+					You are going to get more detailed instructions before the task. 
+					At the end, you will be asked to answer a few questionnaires. 
+					The study will take about 1 hour and you will be compensated with £10. 
+					You may also earn up to £4 dependent on the outcomes of the choices during the task. 
+					You may be asked to participate in a similar but shorter experiment again. 
+					You will then be compensated with a further £5 and you will also have a chance to earn a bonus of up to £2.
+					<br/></p>
+					
+					<p><b><br/>Potential risks and discomfort</b></p>
+					<p>No risks or discomfort are expected.</p>
+
+					<p><b><br/>Please note that you have the right to quit your participation at any point during the experiment!</b><p>
+
+					<p>Your data are protected<br/>
+					The project will collect and record behavioral data but no personal data is collected. There is, therefore, no way for the researchers to trace the data back to your person. 
+					As such, you are completely anonymous when participating in this study.  
+					Researchers involved in the study are required to apply professional secrecy concerning everything that happens in your contact with us. 
+					When the study is finished, the information will be processed and presented statistically at group level, 
+					graphically or as numbers in a table wherein individual information will be untraceable. 
+					In the interest of transparency and reproducibility, de-identified data may be posted on an online depository such as Open Science Framework, 
+					to be available for other researchers. There will be no way for these data to be linked to you. 
+					After publication, information and data collected will be stored for at least 10 years. 
+					Archiving of information collected in this study is regulated by the Archiving Act and the Swedish National Archives is the regulatory authority. 
+					Data management and archiving will take place in accordance with Karolinska Insititutet's rules.</p>
+
+					<p><b><br/>How do you get information about the results of the study?</b></p>
+					<p>If you are interested in receiving information about the results of the study, 
+					feel free to mention it to the experiment leader through the messaging system on this website.
+					We will send you more information when the study is completed and the analyses are done.
+					Note that we cannot disclose individual results, only results at group level.</p>
+
+					<p><b><u><br/>Participation is voluntary.</u></b></p>
+					<p>Your participation is voluntary, and you can choose to quit at any time by closing the current tab of your web browser. 
+					If you choose not to participate or want to cancel your participation, you do not need to indicate why, 
+					you will however not be able to be compensated for your participation if you cancel your participation. </p>
+					
+					<p><b>Do you want to know more?</b><br/>
+					If you have questions or want more information you are welcome to contact the experimenter through the messaging system on this website. 
+					The Main researcher responsible for the study is Marc Guitart-Masip, Ph.D., at the Aging Research Centre at Karolinska Institutet in Sweden.</p>
+					
+					<p><b><br/>Consent to participate in the study</b> <br/> 
+					I have received written information about the study. I may keep the written information by right clicking and selecting to print the current screen. <br/> <br/>
+					- I agree to participate in the project <i>Quantifying prior beliefs about the world in decision-making</i> <br/> <br/>
+					- I agree that my data is saved in the manner described in the participant's information sheet. <br/> <br/>
+					If you click “I Accept” you agree to these terms and the experiment will begin, 
+					if you click “I Decline” the current tab will close, and your participation will be aborted.</p>
+				</div>
+			</div>`,
+		choices: [`I Accept`, `I Decline`],
+		data: {
+			category: `instructions`,
+		},
+		on_finish: function (data) {
+			if (data.response == 1) {
+				return window.location = NCURL
+			}
+		}
+	};
+	timeline.push(consent);
+
+	let participantID = {
+		type: jsPsychSurveyText,
+		preamble:
+			`<p>In order to be able to reward you for participating in this experiment, we need your Prolific ID. <br/>
+				It is very important that this is entered correctly. If it isn't entered correctly, we will not be able to compensate you for participating in this experiment. 
+				</p>`,
+		questions: [
+			{ prompt: `Please enter your Prolific ID here:`, name: `ID` },
+		],
+		data: {
+			category: `instructions`,
+		},
+		on_finish: function (data) {
+			jsPsych.data.addProperties({ subjID: data.response.ID });
+		}
+	};
+	timeline.push(participantID);
+
+	let preload = {
+		type: jsPsychPreload,
+		images: images,
+	};
+	timeline.push(preload);
+
+	let enterFullscreen = {
+		type: jsPsychFullscreen,
+		fullscreen_mode: true
+	}
+	timeline.push(enterFullscreen);
+
+
+	let genInstructionBlockedRobberFactory = {
+		type: jsPsychHtmlKeyboardResponse,
+		choices: ` `,
+		data: {
+			category: `instructions`
+		},
+		timeline: [
+			{
+				stimulus: `<div class ='textDivGen'>
+							<p>Welcome to this experiment! 
+							<br/><br/>
+							In this experiment you will play four unrelated games with two different designs.
+							The structure of the games is similar, but the games differ in several important ways.
+							This will become clear as each game is introduced.
+							<br/><br/>
+							Press the spacebar to continue.</p>
+						</div>`,
+			},
+			{
+				stimulus: `<div class ='textDivGen'>
+							<p>In each game you will have points (indicated as “$$”), 
+							in some games the aim is to gain as many points as possible, 
+							in others you need to minimize the loss of points. 
+							These points are important. 
+							In the end of the experiment, one of the trials from each game will be randomly selected and you will gain a bonus based the amount of points you gain in these trials.
+							This means that all trials in all tasks are important.  
+							In total you can win a bonus of £4.
+							<br/><br/>
+							Press the spacebar to continue.</p>
+						</div>`,
+			},
+			{
+				stimulus: `<div class ='textDivGen'>
+							<p>All of the games follow a structure where you make decisions between two different options. 
+							You will use the left and right arrow keys to make these decisions. 
+							In the games you need to weigh risks and profits to make the optimal choices. 
+							However, the games represent different scenarios and your role in the games can differ a lot, 
+							so you may need to adapt your choices for each task in different ways. 
+							You will play all rounds of one game then the you will be introduced to the next game.
+							To help you keep track of the games, the colours shown on the sides of the screen will change to indicate which game you are playing. 
+							We will now introduce the first game you will play.
+							<br/><br/>
+							Press the spacebar to continue.</p>
+						</div>`,
+			}
+		]
+
+	};
+
+
+	timeline.push(genInstructionBlockedRobberFactory);
+
+
+
+	for (let k = 0; k < taskOrderRnd.length; k++) {
+
+		let infoBeforeStart = {
+			type: jsPsychHtmlKeyboardResponse,
+			stimulus: `<div class ='textDivGen'>
+						<h1 style= 'color:red;'><b>STOP!</b></h1>
+						<p>This is a timed experiment, so once you continue, you will not be able to go back. 
+						There will be 60 trials without breaks. If you need to go to the bathroom or do anything now, please do that first, as if you leave during the task, you will miss trials. 
+						This will be recorded and we will check if you are paying attention at select times during the experiment with trials where you are asked to perform a specific action. 
+						Futhermore, if you are too slow (over 10 seconds) to respond in over 20 trials the experiment will be terminated as this indicates that you have not paid attention. 
+						If the experiment is terminated you will not be compensated for your participation.<br/> <br/>
+						Press the spacebar to show the first attention check of this task and then start the first trial</p>
+					</div>`,
+			choices: ` `,
+			data: {
+				category: `instructions`,
+				robberTotPoints: 0,
+				factoryTotPoints: 0,
+			},
+
+		};
+
+		let infoPictureRobber = {
+			type: jsPsychHtmlKeyboardResponse,
+			stimulus: `<div class ='robberInfoLeftBlock'></div><div class ='robberInfoRightBlock'></div>
+					<div class ='infoTrialDiv'><img class ='infoTrialStim' src ='${robberTrialInfoStim}'> 
+						<p class = 'infoTrialTxt'><b>When you have studied all parts of the choice screen, </br> press the spacebar to start 18 practice trials.</b></p>
+					</div>
+				`,
+			choices: ` `,
+			data: {
+				category: `instructions`
+			},
+			on_finish: function (data) {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					data.robberTotPoints = lastTrialData.robberTotPoints;
+					data.factoryTotPoints = lastTrialData.factoryTotPoints;
+			}
+		};
+
+		let infoPictureFactory = {
+			type: jsPsychHtmlKeyboardResponse,
+			stimulus: `<div class ='factoryInfoLeftBlock'></div><div class ='factoryInfoRightBlock'></div>
+					<div class ='infoTrialDiv'><img class ='infoTrialStim' src ='${factoryTrialInfoStim}'> 
+						<p class = 'infoTrialTxt'><b>When you have studied all parts of the choice screen, </br> press the spacebar to start 18 practice trials.</b></p>
+					</div>
+				`,
+			choices: ` `,
+			data: {
+				category: `instructions`
+			},
+			on_finish: function (data) {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					data.robberTotPoints = lastTrialData.robberTotPoints;
+					data.factoryTotPoints = lastTrialData.factoryTotPoints;
+			}
+		};
+
+		let catchTrial = {
+			type: jsPsychHtmlKeyboardResponse,
+			stimulus: `<div class ='textDivGen'>
+					<p>This is an attention check, please respond by pressing the <b>arrow-key up</b> before the timer runs out</p>
+				</div>`,
+			choices: [`ArrowUp`],
+			trial_duration: catchTrialDuration,
+			data: {
+				category: `catchTrial`
+			},
+			on_finish: function (data) {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					data.robberTotPoints = lastTrialData.robberTotPoints;
+					data.factoryTotPoints = lastTrialData.factoryTotPoints;
+			}
+		};
+
+		let failedAttentionChecks = {
+			type: jsPsychHtmlKeyboardResponse,
+			stimulus: `<div class ='textDivGen'>
+					<p> You have failed to respond in time in more than ${maxMissedTrials} trials, as such we will not be able to use your data.</p> <p><b><u>The experiment will now be terminated.</u></b></p>
+						If you have any questions regarding this please contact the researchers through the messaging system on prolific. </p>
+						<p> When you press the spacebar the current tab of your web browser will close</p>
+				</div>`,
+			choices: ` `,
+			trial_duration: 100000,
+			on_finish: function(){
+				return window.location = FAURL;
+			},					
+		}
+
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////// ROBBER TASK ////////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		if (taskOrderRnd[k] == 0) {
+
+			// instructions
+			let isFirstTime = true;
+			timeline.push(robberTaskInfo(Math.min(...robberValueArray), Math.max(...robberValueArray), Math.min(...costsArrayRobber), Math.max(...costsArrayRobber), isFirstTime));
+
+			timeline.push(infoPictureRobber);
+
+			// practice trials
+			for (let i = 0; i < practiceTrialListRobber.length; i++){
+				for (let j = 0; j < practiceTrials[practiceTrialListRobber[i]]; j++) {
+					let rndTrialIndex = jsPsych.randomization.randomInt(0, (sumTrials-1));
+					timeline.push(robberTrial(robberPracticeStimShuffled[i], offersArrayRobber[rndTrialIndex], practiceTrialProbs[practiceTrialListRobber[i]], costsArrayRobber[rndTrialIndex], noActValueRobber[rndTrialIndex], 0, practiceITI(), "NA", practiceMaxRT, practiceDelibT, "NA", 1));
+				}
+			}
+			
+			timeline.push(infoBeforeStart)
+			timeline.push(catchTrial);
+
+			// Robber task begin
+			let trialNoRobber = 0
+			let robberAgentsEncountered = 0
+			for (let i = 0; i < NAgentsInBlock; i++) {
+				for (let j = 0; j < NTrialR[robberAgentsEncountered]; j++) {
+					timeline.push(robberTrial(robberListShuffled[robberAgentsEncountered], offersArrayRobber[trialNoRobber], probWinActRobber[robberAgentsEncountered], costsArrayRobber[trialNoRobber], noActValueRobber[trialNoRobber], trialNoRobber, ITI(), IET, maxRT, delibT, outcomeT, 0))
+					
+					let robberTaskCheckTotalMissedTrials ={
+						timeline: [failedAttentionChecks],
+						conditional_function: function() {
+							let totalMissedTrials = (jsPsych.data.get().select('act').frequencies().noResponse)/3;
+							return totalMissedTrials> maxMissedTrials;
+						}
+					}
+					timeline.push(robberTaskCheckTotalMissedTrials);
+
+					let robberTaskLoop = { //If the participant did not respond -> loop the same trial again
+						timeline: [robberTaskCheckTotalMissedTrials,robberTrial(robberListShuffled[robberAgentsEncountered], offersArrayRobber[trialNoRobber], probWinActRobber[robberAgentsEncountered], costsArrayRobber[trialNoRobber], noActValueRobber[trialNoRobber], trialNoRobber, ITI(), IET, maxRT, delibT, outcomeT, 0)],
+						loop_function: function () {
+							let missedLastTrial = (jsPsych.data.get().last(2).values()[0].act == 'noResponse');
+							return missedLastTrial;
+						}
+					};
+
+					let robberTaskChoiceCheck = { //If the participant did not respond -> go to loop above
+						timeline: [robberTaskLoop],
+						conditional_function: function () {
+							let missedLastTrial = (jsPsych.data.get().last(2).values()[0].act == 'noResponse');
+							return missedLastTrial;
+						}
+					};
+					timeline.push(robberTaskChoiceCheck);
+
+					trialNoRobber++
+				}
+				robberAgentsEncountered++
+
+				if(i == catchTrialNBlocked[0]){
+					timeline.push(catchTrial);
+				}
+
+			};
+			// post task feedback
+			let robberEndTask = {
+				type: jsPsychHtmlKeyboardResponse,
+				stimulus: function () {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					let html = `<div class = 'textDivGen'>
+							<p>You have now completed the Robber task. <br/><br/>
+							You got ${lastTrialData.robberTotPoints} $$ in this task. <br/> <br/>
+							Press the spacebar to continue.
+						</div>`;
+					return html;
+				},
+				choices: ` `,
+				data: {
+					category: `paus`,
+				},
+				on_finish: function (data) {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					data.robberTotPoints = lastTrialData.robberTotPoints;
+					data.factoryTotPoints = lastTrialData.factoryTotPoints;
+				}
+			};
+			timeline.push(robberEndTask);
+		};
+
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////// FACTORY TASK ///////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		if (taskOrderRnd[k] == 1) {
+
+			// instructions
+			let isFirstTime = true;
+			timeline.push(factoryTaskInfo(Math.min(...offersArrayFactory), Math.max(...offersArrayFactory), Math.min(...costsArrayFactory), Math.max(...costsArrayFactory),isFirstTime));
+			timeline.push(infoPictureFactory);
+
+			// practice trial
+			for (let i = 0; i < practiceTrialListFactory.length; i++){
+				for (let j = 0; j < practiceTrials[practiceTrialListFactory[i]]; j++) {
+					let rndTrialIndex = jsPsych.randomization.randomInt(0, (sumTrials-1));
+					timeline.push(factoryTrial(factoryPracticeStimShuffled[i], offersArrayFactory[rndTrialIndex], practiceTrialProbs[practiceTrialListFactory[i]], costsArrayFactory[rndTrialIndex], noActValueFactory[rndTrialIndex], 0, practiceITI(), "NA", practiceMaxRT, practiceDelibT, "NA", 1));
+				}
+			}
+			timeline.push(infoBeforeStart)
+			timeline.push(catchTrial);
+			
+			//task 
+			let trialNoFactory = 0;
+			let factoryAgentsEncountered = 0;
+			for (let i = 0; i < NAgentsInBlock; i++) {
+				for (let j = 0; j < NTrialF[factoryAgentsEncountered]; j++) {
+					timeline.push(factoryTrial(factoryListShuffled[factoryAgentsEncountered], offersArrayFactory[trialNoFactory], probWinActFactory[factoryAgentsEncountered], costsArrayFactory[trialNoFactory], noActValueFactory[trialNoFactory], trialNoFactory, ITI(), IET, maxRT, delibT, outcomeT, 0))
+					
+					let factoryTaskCheckTotalMissedTrials ={
+						timeline: [failedAttentionChecks],
+						conditional_function: function() {
+							let totalMissedTrials = (jsPsych.data.get().select('act').frequencies().noResponse)/3;
+							return totalMissedTrials> maxMissedTrials;
+						}
+					}
+					timeline.push(factoryTaskCheckTotalMissedTrials);
+
+					let factoryTaskLoop = { //If the participant did not respond -> loop the same trial again
+						timeline: [factoryTaskCheckTotalMissedTrials,factoryTrial(factoryListShuffled[factoryAgentsEncountered], offersArrayFactory[trialNoFactory], probWinActFactory[factoryAgentsEncountered], costsArrayFactory[trialNoFactory], noActValueFactory[trialNoFactory], trialNoFactory, ITI(), IET, maxRT, delibT, outcomeT, 0)],
+						loop_function: function () {
+							let missedLastTrial = (jsPsych.data.get().last(2).values()[0].act == 'noResponse');
+							return missedLastTrial;
+						}
+					};
+
+					let factoryTaskChoiceCheck = { //If the participant did not respond -> go to loop above
+						timeline: [factoryTaskLoop],
+						conditional_function: function () {
+							let missedLastTrial = (jsPsych.data.get().last(2).values()[0].act == 'noResponse');
+							return missedLastTrial;
+						}
+					};
+					timeline.push(factoryTaskChoiceCheck);
+
+					trialNoFactory ++
+				}
+				factoryAgentsEncountered++
+
+				if(i == catchTrialNBlocked[1]){
+					timeline.push(catchTrial);
+				}
+
+			};
+
+			// end of task feedback
+			let factoryEndTask = {
+				type: jsPsychHtmlKeyboardResponse,
+				stimulus: function () {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					let html = `<div class = 'textDivGen'>
+							<p>You have now completed the Factory task. <br/><br/>
+							You lost ${lastTrialData.factoryTotPoints} $$ in this task. <br/><br/>
+							Press the spacebar to continue.
+						</div>`;
+					return html;
+				},
+				choices: ` `,
+				data: {
+					category: `paus`,
+				},
+				on_finish: function (data) {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					data.robberTotPoints = lastTrialData.robberTotPoints;
+					data.factoryTotPoints = lastTrialData.factoryTotPoints;
+				}
+			};
+			timeline.push(factoryEndTask);
+
+		};	
+
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/////////////////////////////////////// ROBBER TASK  2///////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		if (taskOrderRnd[k] == 2) {
+
+			//instructions
+			let isFirstTime = false;
+			timeline.push(robberTaskInfo(Math.min(...robberValueArray), Math.max(...robberValueArray), Math.min(...costsArrayRobber), Math.max(...costsArrayRobber), isFirstTime));
+
+
+
+			//Practice trial
+			timeline.push(infoBeforeStart)
+			timeline.push(catchTrial);
+
+			//Task 
+			let trialNoRobber = sumTrials/2;
+			let robberAgentsEncountered = NAgentsInBlock;
+			for (let i = 0; i < NAgentsInBlock; i++) {
+				for (let j = 0; j < NTrialR[robberAgentsEncountered]; j++) {
+					timeline.push(robberTrial(robberListShuffled[robberAgentsEncountered], offersArrayRobber[trialNoRobber], probWinActRobber[robberAgentsEncountered], costsArrayRobber[trialNoRobber], noActValueRobber[trialNoRobber], trialNoRobber, ITI(), IET, maxRT, delibT, outcomeT, 0))
+					
+					let robberTaskCheckTotalMissedTrials ={
+						timeline: [failedAttentionChecks],
+						conditional_function: function() {
+							let totalMissedTrials = (jsPsych.data.get().select('act').frequencies().noResponse)/3;
+							return totalMissedTrials> maxMissedTrials;
+						}
+					}
+					timeline.push(robberTaskCheckTotalMissedTrials);
+
+					let robberTaskLoop = { //If the participant did not respond -> loop the same trial again
+						timeline: [robberTaskCheckTotalMissedTrials,robberTrial(robberListShuffled[robberAgentsEncountered], offersArrayRobber[trialNoRobber], probWinActRobber[robberAgentsEncountered], costsArrayRobber[trialNoRobber], noActValueRobber[trialNoRobber], trialNoRobber, ITI(), IET, maxRT, delibT, outcomeT, 0)],
+						loop_function: function () {
+							let missedLastTrial = (jsPsych.data.get().last(2).values()[0].act == 'noResponse');
+							return missedLastTrial;
+						}
+					};
+
+					let robberTaskChoiceCheck = { //If the participant did not respond -> go to loop above
+						timeline: [robberTaskLoop],
+						conditional_function: function () {
+							let missedLastTrial = (jsPsych.data.get().last(2).values()[0].act == 'noResponse');
+							return missedLastTrial;
+						}
+					};
+					timeline.push(robberTaskChoiceCheck);
+
+					trialNoRobber++
+				}
+				robberAgentsEncountered++
+
+				if(i == catchTrialNBlocked[2]){
+					timeline.push(catchTrial);
+				}
+			};
+
+			// end of trial feedback
+			let robberEndTask = {
+				type: jsPsychHtmlKeyboardResponse,
+				stimulus: function () {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					let html = `<div class = 'textDivGen'>
+							<p>You have now completed the Robber task. <br/><br/>
+							You got ${lastTrialData.robberTotPoints} $$ in this task. <br/> <br/>
+							Press the spacebar to continue.
+						</div>`;
+					return html;
+				},
+				choices: ` `,
+				data: {
+					category: `paus`,
+				},
+				on_finish: function (data) {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					data.robberTotPoints = lastTrialData.robberTotPoints;
+					data.factoryTotPoints = lastTrialData.factoryTotPoints;
+				}
+			};
+			timeline.push(robberEndTask);
+		};
+
+
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////// FACTORY TASK 2///////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+		if (taskOrderRnd[k] == 3) {
+			let isFirstTime = false;
+			//instructions
+			timeline.push(factoryTaskInfo(Math.min(...offersArrayFactory), Math.max(...offersArrayFactory), Math.min(...costsArrayFactory), Math.max(...costsArrayFactory), isFirstTime));
+
+			timeline.push(infoBeforeStart)
+			timeline.push(catchTrial);
+
+			//Task
+			let trialNoFactory = sumTrials/2;
+			let factoryAgentsEncountered = NAgentsInBlock;
+			for (let i = 0; i < NAgentsInBlock; i++) {
+				for (let j = 0; j < NTrialF[factoryAgentsEncountered]; j++) {
+					timeline.push(factoryTrial(factoryListShuffled[factoryAgentsEncountered], offersArrayFactory[trialNoFactory], probWinActFactory[factoryAgentsEncountered], costsArrayFactory[trialNoFactory], noActValueFactory[trialNoFactory], trialNoFactory, ITI(), IET, maxRT, delibT, outcomeT, 0))
+					
+					let factoryTaskCheckTotalMissedTrials ={
+						timeline: [failedAttentionChecks],
+						conditional_function: function() {
+							let totalMissedTrials = (jsPsych.data.get().select('act').frequencies().noResponse)/3;
+							return totalMissedTrials> maxMissedTrials;
+						}
+					}
+					timeline.push(factoryTaskCheckTotalMissedTrials);
+
+					let factoryTaskLoop = { //If the participant did not respond -> loop the same trial again
+						timeline: [factoryTaskCheckTotalMissedTrials,factoryTrial(factoryListShuffled[factoryAgentsEncountered], offersArrayFactory[trialNoFactory], probWinActFactory[factoryAgentsEncountered], costsArrayFactory[trialNoFactory], noActValueFactory[trialNoFactory], trialNoFactory, ITI(), IET, maxRT, delibT, outcomeT, 0)],
+						loop_function: function () {
+							let missedLastTrial = (jsPsych.data.get().last(2).values()[0].act == 'noResponse');
+							return missedLastTrial;
+						}
+					};
+
+					let factoryTaskChoiceCheck = { //If the participant did not respond -> go to loop above
+						timeline: [factoryTaskLoop],
+						conditional_function: function () {
+							let missedLastTrial = (jsPsych.data.get().last(2).values()[0].act == 'noResponse');
+							return missedLastTrial;
+						}
+					};
+					timeline.push(factoryTaskChoiceCheck);
+
+					trialNoFactory ++
+				}
+				factoryAgentsEncountered++
+
+				if(i == catchTrialNBlocked[3]){
+					timeline.push(catchTrial);
+				}
+			};
+			
+			// end of trial feedback
+			let factoryEndTask = {
+				type: jsPsychHtmlKeyboardResponse,
+				stimulus: function () {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					let html = `<div class = 'textDivGen'>
+							<p>You have now completed the Factory task. <br/><br/>
+							You lost ${lastTrialData.factoryTotPoints} $$ in this task. <br/><br/>
+							Press the spacebar to continue.
+						</div>`;
+					return html;
+				},
+				choices: ` `,
+				data: {
+					category: `paus`,
+				},
+				on_finish: function (data) {
+					let lastTrialData = jsPsych.data.get().last(2).values()[0];
+					data.robberTotPoints = lastTrialData.robberTotPoints;
+					data.factoryTotPoints = lastTrialData.factoryTotPoints;
+				}
+			};
+			timeline.push(factoryEndTask);
+
+		};	
+	};
+	
+
+
+	////////////////////////////////////###////#/////#//#####///####///###########//#////####////#//////#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////#///#///#/////#//#//////#////////////#///////#///#////#///###////#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////#/////#//#/////#//#//////#////////////#///////#//#/////#///#//#///#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////#///#/#//#/////#//####////####////////#///////#//#/////#///#///#//#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////#///#////#///#///#///////////#///////#///////#///#///#////#////#/#//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	////////////////////////////////////###/#////###////#####///####////////#///////#////###/////#/////##//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	let introQuestionnaries = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: `<div class ='textDivGen'>
+					<p>You have now completed the first part of the experiment, we now ask that you answer some questionnaires. There are no right or wrong answers, so please answer as truthfully as possible.
+					<br/>
+					Press the spacebar to continue</p>
+				</div>`,
+		choices: ` `,
+		data: {
+			category: `misc`,
+		},
+	};
+	timeline.push(introQuestionnaries);
+
+	
+	let questionnaires = [];
+
+	// Randomize which 6 questionnaires will have attention checks 
+	let includeAttentionChecksQ = [1,1,1,1,1,1,0,0,0,0,0,0,0] //1 = attention check, 0 = no attention check
+	includeAttentionChecksQ = jsPsych.randomization.repeat(includeAttentionChecksQ,1) //shuffle array
+
+	// ANXIETY/WORRY QUESTIONNAIRES
+	//State-trait anxiety index
+	questionnaires.push(qSTAI1(includeAttentionChecksQ[0]));
+	questionnaires.push(qSTAI2(includeAttentionChecksQ[1]));
+	//Generalized Anxiety Disorder 7-item scale
+	questionnaires.push(GAD7(includeAttentionChecksQ[2]));
+	//The Penn State Worry Questionnaire (PSWQ) 
+	questionnaires.push(PSWQ(includeAttentionChecksQ[3]));
+
+	// APATHY/ANHEDONIA RELATED QUESTIONNAIRES
+	//BIS/BAS
+	questionnaires.push(BIS_BAS(includeAttentionChecksQ[4]));
+	//Apathy Motivation Index
+	questionnaires.push(AMI(includeAttentionChecksQ[5]));
+	//Snaith-Hamilton Pleasure Scale (SHAPS)
+	questionnaires.push(SHPS(includeAttentionChecksQ[6]));
+
+	// DEPRESSION QUESTIONNAIRES 
+	//Patient Health Questionnaire 9
+	questionnaires.push(PHQ9(includeAttentionChecksQ[7]));
+	//Center for Epidemiologic Studies Depression Scale
+	questionnaires.push(CESD(includeAttentionChecksQ[8]));
+	//INVENTORY OF DEPRESSIVE SYMPTOMATOLOGY (SELF-REPORT) (IDS-SR)
+	questionnaires.push(IDSSR(includeAttentionChecksQ[9]));
+	//Zung Self-Rating Depression Scale (SDS) 
+	questionnaires.push(SDS(includeAttentionChecksQ[10]));
+
+	// GENERAL AFFECT
+	//Positive Negative affect shedule
+	questionnaires.push(PANAS(includeAttentionChecksQ[11]));
+
+	// GENERAL HEALTH
+	//RAND 36
+	questionnaires.push(RAND36(includeAttentionChecksQ[12]));
+
+	questionnaires =  jsPsych.randomization.repeat(questionnaires,1); // shuffle order of questionnaire presentation
+
+	timeline =  timeline.concat(questionnaires);
+
+	let introOMST = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: `<div class ='textDivGen'>
+					<p>You have now completed all questionnaires. We now ask you to complete another very short task.
+					<br/>
+					Press the spacebar to continue</p>
+				</div>`,
+		choices: ` `,
+		data: {
+			category: `misc`,
+		},
+	};
+	timeline.push(introOMST);
+
+
+	timeline = timeline.concat(oMST())
+
+
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//////////////////////////////////////////////////// END SCREEN ///////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	let exitFullscreen = {
+		type: jsPsychFullscreen,
+		fullscreen_mode: false,
+		delay_after: 0
+	}
+	timeline.push(exitFullscreen)
+
+	let endScreen = {
+		type: jsPsychHtmlKeyboardResponse,
+		stimulus: `<div class ='textDivGen'>
+					<p>Thank you for participating in this experiment!
+						<br/>
+					Press the spacebar to be redirected back to prolific. </p>
+				</div>`,
+		choices: ` `,
+		data: {
+			category: `misc`
+		},
+	};
+	timeline.push(endScreen);
+
+
+	let pavlovia_finish = {
+		type: jsPsychPavlovia,
+		command: "finish",
+		participantId: "JSPSYCH-V1",
+		dataFilter: function (data) {
+			return data;
+		},
+		completedCallback: function () {
+			alert('data successfully submitted!');
+		}
+	};
+	timeline.push(pavlovia_finish);
+
+	jsPsych.run(timeline);
+
+</script>
+
+</html>

@@ -1,0 +1,322 @@
+.consentContainerDiv{
+    width: 70%;
+    position: relative;
+    left: 10%;
+    right: 10%;	
+    background-color: white;
+    border: 5px solid rgb(135,0,82);
+    padding-left: 5%;
+    padding-right: 5%;
+}
+.KILogoIMG{
+    max-width: 15%;
+    position: absolute;
+    left: 3%;
+    top: 0%;
+}
+.textDivConsent{
+    padding-left: 5%;
+    padding-right: 5%;
+    padding-top: 5%;
+}
+.consentContainerDiv .consentList {
+    width: 50%; 
+    margin: auto;
+}
+.textDivGen{
+    position: relative;
+    width: 50%;
+    left: 25%;
+    right: 25%;
+}
+.taskInfoPrompt{
+    position:absolute;
+    top: 65%;
+    left: 30%;
+    right: 30%;
+    font-size: 1vw;
+}
+.missedTrialPrompt{
+    position:absolute;
+    top: 40%;
+    left: 40%;
+    right: 40%;
+    font-size: 1.5vw;
+    color: red;
+    font-weight: bold;
+}
+.totPTxt{
+    position: absolute;
+    left: 30%;
+    right: 30%;
+    top: 1%;
+    font-size: 1vw;
+    color: yellow;
+}
+.IEStimDiv{
+    position: fixed;
+    left: 35%;
+    right: 35%;
+    top: 15%;
+    bottom: 50%;
+}
+.IETxt{
+    position: absolute;
+    left: 40%;
+    right: 40%;
+    top: 60%;
+    bottom: 0%;
+    font-size: 1.5vw;
+}
+.choiceStimDiv{
+    position: fixed;
+    left: 30%;
+    right: 30%;
+    bottom: 40%;
+    top: 5%;
+}
+.leftArrowStim{
+    width: 100%;
+    height: 70%;
+}
+.lossP{
+    color: red;
+    font-size: 2.5vw;
+}
+.winP{
+    color: greenyellow;
+    font-size: 2.5vw;
+}
+.outcomeP{
+    color: #000;
+    font-size: 1.5vw;
+}
+.rightArrowStim{
+    width: 100%;
+    height: 70%;
+}
+.robberIEStim{
+    width: 100%;
+    height: auto;
+}
+.infoTrialDiv{
+    position: fixed;
+    top: 0%;
+    width: 70%;
+    left: 15%;
+    right: 15%;
+}
+.infoTrialStim{
+    width: 100%;
+    height: auto;
+    border-style: solid;
+}
+.infoTrialTxt{
+    font-size: 1.5vw;
+}
+/*ROBBER TASK*/
+.robberChoiceStim{
+    width: 100%;
+    height: auto;
+}
+.robberChoiceIE{
+    position: absolute;
+    border: 5px solid rgb(0, 0, 0);
+    background: rgb(127, 127, 127);
+    right: 35%;
+    left: 35%;
+    top: 75%;
+    bottom: 0%;
+    color: gainsboro;
+    font-size: 1.2vw;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+.robberInfoLeftBlock{
+    position: absolute;
+    left: 0%;
+    top: 0%;
+    bottom: 0%;
+    right: 75%;
+    background: rgb(127, 127, 127);
+}
+.robberInfoRightBlock{
+    position: absolute;
+    left: 75%;
+    top: 0%;
+    bottom: 0%;
+    right: 0%;
+    background: rgb(127, 127, 127);
+}
+.robberLeftBlock{
+    position: absolute;
+    left: 0%;
+    top: 0%;
+    bottom: 0%;
+    right: 65%;
+    background: rgb(127, 127, 127);
+}
+.robberLeftBlock .robberCostPromptLeft{
+    position: absolute;
+    text-align: center;
+    left: 15%;
+    right: 15%;
+    top: 60%;
+    font-size: 1.3vw;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: gainsboro;
+}
+.robberLeftBlock .robberLeftChoicePrompt{
+    position: absolute;
+    text-align: center;
+    left: 10%;
+    right: 10%;
+    top: 10%;
+    font-size: 2.5vw;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: gainsboro;
+}
+.robberLeftBlock .robberLeftArrowDiv {
+    position: absolute;
+    right: 0%;
+    top: 30%;
+    bottom: 30%;
+    left: auto;
+}
+.robberRightBlock{
+    position: absolute;
+    left: 65%;
+    top: 0%;
+    bottom: 0%;
+    right: 0%;
+    background: rgb(127, 127, 127);
+}
+.robberRightBlock .robberRightChoicePrompt{
+    position: absolute;
+    text-align: center;
+    left: 10%;
+    right: 10%;
+    top: 10%;
+    font-size: 2.5vw;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: gainsboro;
+}
+.robberRightBlock .robberRightArrowDiv {
+    position: absolute;
+    right: auto;
+    top: 30%;
+    bottom: 30%;
+    left: 0%;
+}
+.robberRightBlock .robberCostPromptRight{
+    position: absolute;
+    text-align: center;
+    left: 15%;
+    right: 15%;
+    top: 60%;
+    font-size: 1.3vw;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: gainsboro;
+}
+/* FACTORY TASK*/
+.factoryChoiceStim{
+    width: 95%;
+    height: auto;
+}
+.factoryInfoLeftBlock{
+    position: absolute;
+    left: 0%;
+    top: 0%;
+    bottom: 0%;
+    right: 75%;
+    background: rgb(83, 60, 1);
+}
+.factoryInfoRightBlock{
+    position: absolute;
+    left: 75%;
+    top: 0%;
+    bottom: 0%;
+    right: 0%;
+    background: rgb(83, 60, 1);
+}
+.factoryChoiceIE{
+    position: absolute;
+    border: 5px solid rgb(0, 0, 0);
+    background: rgb(83, 60, 1);
+    right: 35%;
+    left: 35%;
+    top: 75%;
+    bottom: 0%;
+    color: gainsboro;
+    font-size: 1.2vw;
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+}
+.factoryLeftBlock{
+    position: absolute;
+    left: 0%;
+    top: 0%;
+    bottom: 0%;
+    right: 65%;
+    background: rgb(83, 60, 1);
+}
+.factoryLeftBlock .factoryLeftArrowDiv{
+    position: absolute;
+    right: 0%;
+    top: 30%;
+    bottom: 30%;
+    left: auto;
+}
+.factoryLeftBlock .factoryCostPromptLeft{
+    position: absolute;
+    text-align: center;
+    left: 15%;
+    right: 15%;
+    top: 60%;
+    font-size: 1.3vw;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: gainsboro;
+}
+.factoryLeftBlock .factoryLeftChoicePrompt{
+    position: absolute;
+    text-align: center;
+    left: 10%;
+    right: 10%;
+    top: 10%;
+    font-size: 2.3vw;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: gainsboro;
+}
+.factoryRightBlock{
+    position: absolute;
+    left: 65%;
+    top: 0%;
+    bottom: 0%;
+    right: 0%;
+    background: rgb(83, 60, 1);
+}
+.factoryRightBlock .factoryRightChoicePrompt{
+    position: absolute;
+    text-align: center;
+    left: 10%;
+    right: 10%;
+    top: 10%;
+    font-size: 2.3vw;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: gainsboro;
+}
+.factoryRightBlock .factoryCostPromptRight{
+    position: absolute;
+    text-align: center;
+    left: 15%;
+    right: 15%;
+    top: 60%;
+    font-size: 1.3vw;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+    color: gainsboro;
+}
+.factoryRightBlock .factoryRightArrowDiv{
+    position: absolute;
+    right: auto;
+    top: 30%;
+    bottom: 30%;
+    left: 0%;
+}
