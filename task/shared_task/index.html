@@ -50,7 +50,6 @@
 
 		NTrial = NTrial.concat(NTrial);
 		return NTrial;
-
 	}
 	
 	let NTrialR = generateNumberofTrialsAndAgents();
@@ -90,14 +89,13 @@
 	EEarray = EEarray.concat([2]) //add the extra endowments
 	
 	let probWin= [];
-
 	probWin = [...Array(NAgentsInBlock+2).keys()];
 	probWin = probWin.map(x => (x)/((NAgentsInBlock+2)-1))
 	probWin.pop()//remove 100% prob
 	probWin.shift()//remove 0% prob
 
 	
-	// timings
+	// TIMINGS
 	function ITI(mean = 1000, SD = 500) {
 		let time = jsPsych.randomization.sampleNormal(mean, SD)
 		while (time < 0) {
@@ -153,7 +151,8 @@
 	let images = [arrowLeftImg, arrowRightImg, robberIEStim, factoryIEStim] // add all images to an array to be able to preload them
 	images = images.concat(robberListShuffled, factoryListShuffled, robberPracticeStim, factoryPracticeStim)
 
-	// Robber Task
+
+	// ROBBER TASK SETTINGS
 	let costFight = 50;
 	const costNoFight = 0;
 
@@ -175,7 +174,6 @@
 
 	let robberCostMatrix = [[],[],[]];
 	let robberValueMatrix = [[],[],[]];
-	
 	for (let j = 0; j < valueIndex.length; j++) {
 		for (let i= 0; i <costTypeArray.length; i++){
 			if (costTypeValueRobber[valueIndexMatrixR[i][0][j]][i]==0){
@@ -199,8 +197,6 @@
 	});
 
 	let costsArrayRobber = [];
-
-
 	costsArrayRobber = costsRobber;
 	costsArrayRobber = costsArrayRobber.map(function (each_element) { // Now we round the costs to remove decimals
 		return Number(each_element.toFixed(0));
@@ -216,7 +212,8 @@
 	noActValueRobber = noActValueRobber.concat(noActValueRobber);
 	probWinActRobber = probWinActRobber.concat(probWinActRobber);
 
-	//Factory task
+	
+	//FACTORY TASK SETTINGS
 	const costRepair = 50;
 	const costNoRepair = 0;
 
@@ -234,7 +231,6 @@
 
 	let factoryCostMatrix = [[], [], []]
 	let factoryValueMatrix = [[], [], []]	
-
 	for (let j = 0; j < valueIndex.length; j++) {
 		for (let i= 0; i <costTypeArray.length; i++){
 			if (costTypeValueFactory[valueIndexMatrixF[i][0][j]][i]==0){
@@ -259,7 +255,6 @@
 	});
 
 	let costsArrayFactory = [];
-
 	costsArrayFactory = costFactory;
 	costsArrayFactory = costsArrayFactory.map(function (each_element) { // Now we round the costs to remove decimals
 		return Number(each_element.toFixed(0));
