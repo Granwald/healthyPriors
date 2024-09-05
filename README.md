@@ -11,4 +11,5 @@ The task was programmed by Tobias Granwald at Karolinska Institutet utilizing Ja
 
 ## Referenses
 Granwald, T., Dayan, P., Lengyel, M., & Guitart-masip, M. (2024, August 8). Bayesian Priors in Active Avoidance. https://doi.org/10.31234/osf.io/2zcjh
+
 de Leeuw, J. R. (2015). jsPsych: A JavaScript library for creating behavioral experiments in a web browser. Behavior Research Methods, 47(1), 1-12. doi:10.3758/s13428-014-0458-y.
