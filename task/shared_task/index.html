@@ -72,16 +72,19 @@
 	const repeatArray = (arr, n) => [].concat(...Array(Math.ceil(n)).fill(arr));
 
 	const maxMissedTrials = 20;
-	const NPracticeTrial = 18;
 
+	//practice trials
+	const NPracticeTrial = 18; //set number of practice trials
 	let practiceTrialList = [0,1,2,3];
-	let practiceTrials = [4,4,4,6];
-	let practiceTrialProbs = [0.8,0.2,0.5,0.5];
+	let practiceTrials = [4,4,4,6]; //number of trials/stim for the practice trials 
+	let practiceTrialProbs = [0.8,0.2,0.5,0.5]; //specifies the prob success for each stim in practice trials
 
 	let practiceTrialListRobber = jsPsych.randomization.repeat(practiceTrialList,1)
 	let practiceTrialListFactory = jsPsych.randomization.repeat(practiceTrialList,1)
 
+	
 	function generateTaskOrder(){
+		//randomizes which task participants start with, 0 = robber, 1 = factory
 		const taskOrder = [0, 1];
 		const taskOrderRnd = jsPsych.randomization.repeat(taskOrder, 1);
 		if(isDay1){
@@ -94,11 +97,13 @@
 
 	let catchTrialNBlocked = [jsPsych.randomization.randomInt(2, 11),jsPsych.randomization.randomInt(2, 11),jsPsych.randomization.randomInt(2, 11), jsPsych.randomization.randomInt(2, 11)];
 
+	// specify offer array
 	let EEarray = [...Array(20).keys()];
 	EEarray = EEarray.map(x => (x + 1) * 0.05);
 	EEarray.shift(); // remove first object
 	EEarray = EEarray.concat([2]) //add the extra endowments
 	
+	//specify prob success array
 	let probWin= [];
 	probWin = [...Array(NAgentsInBlock+2).keys()];
 	probWin = probWin.map(x => (x)/((NAgentsInBlock+2)-1))
@@ -114,10 +119,10 @@
 		}
 		return time
 	} //Inter trial interval in ms 
-	const IET = 3000; //Initial endowment time in ms
-	const maxRT = 10000; // max time participants have to response in ms
-	const delibT = 1000;
-	const outcomeT = 4000;
+	const IET = 3000; //time the offer is shown before choice time starts in ms
+	const maxRT = 10000; //max time participants have to response in ms
+	const delibT = 1000; //time of the wait between choice and outcome in ms
+	const outcomeT = 4000; //time that the outcome is show to the participant in ms
 	function practiceITI(mean = 1000, SD = 500) {
 		let time = jsPsych.randomization.sampleNormal(mean, SD)
 		while (time < 0) {
@@ -125,9 +130,9 @@
 		}
 		return time
 	}
-	const practiceDelibT = 3000;
+	const practiceDelibT = 3000; //same as above but for the practice trials
 	const practiceMaxRT = 5000;
-	const catchTrialDuration = 10000;
+	const catchTrialDuration = 10000; //max duration of the attention checks that are placed at random slots in the task
 
 
 	/// STIMULI
