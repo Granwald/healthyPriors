@@ -71,7 +71,7 @@
 
 	const repeatArray = (arr, n) => [].concat(...Array(Math.ceil(n)).fill(arr));
 
-	const maxMissedTrials = 20;
+	const maxMissedTrials = 20;//if participants fail to respond in time for more that maxMissedTrials the experiment ends
 
 	//practice trials
 	const NPracticeTrial = 18; //set number of practice trials
@@ -102,7 +102,9 @@
 	EEarray = EEarray.map(x => (x + 1) * 0.05);
 	EEarray.shift(); // remove first object
 	EEarray = EEarray.concat([2]) //add the extra endowments
-	
+	const genOfferArray = EEarray.map(x => (50) / x);
+
+
 	//specify prob success array
 	let probWin= [];
 	probWin = [...Array(NAgentsInBlock+2).keys()];
@@ -136,7 +138,7 @@
 
 
 	/// STIMULI
-	const KILogo = `img/KILogo.png`;
+	const consentLogo = `img/KILogo.png`;//institution logo for the consent form
 	const arrowLeftImg = `img/arrowLeft.png`;
 	const arrowRightImg = `img/arrowRight.png`;
 
@@ -169,11 +171,8 @@
 
 
 	// ROBBER TASK SETTINGS
-	let costFight = 50;
-	const costNoFight = 0;
+	const initialEndowmentsRobber = genOfferArray;
 
-	const initialEndowmentsRobber = EEarray.map(x => (costFight - costNoFight) / x);
-	
 	let valueIndex = Array.from(Array(initialEndowmentsRobber.length).keys())
 	let costTypeArray = [0, 1, 2]
 
@@ -230,10 +229,7 @@
 
 	
 	//FACTORY TASK SETTINGS
-	const costRepair = 50;
-	const costNoRepair = 0;
-
-	const costLosingFactory = EEarray.map(x => (costRepair - costNoRepair) / x);
+	const costLosingFactory = genOfferArray;
 
 	let percentageCostFactory = [0, 0.05, 0.1]
 	let setCostFactory = [100, 50, 0]
@@ -311,86 +307,14 @@
 	let consent = {
 		type: jsPsychHtmlButtonResponse,
 		stimulus: `<div class='consentContainerDiv'>
-				<img class='KILogoIMG' src ='${KILogo}' alt="Karolinska Institutet's logo">
+				<img class='consentLogoIMG' src ='${consentLogo}'>
 				<div class='textDivConsent'>
 					<h1>Informed consent <br></h1>
 
-					<p><b><u><br/>Project title: Quantifying prior beliefs about the world in decision-making</u></b></p>
+					<h1>TEXT OF ADD INFORMED CONSENT HERE </H1>
 
-					<p><b><u><br/>Request to participate in a research study</u></b></p>
-					<p>We conduct research on decision-making and you are invited to take part as a research participant in this field. 
-					The entity principally responsible for the research (forskningshuvudman) is Karolinska Institutet in Sweden. 
-					Before you decide whether or not you wish to participate, it is important that you understand the background of the study and what participation entails. 
-					Therefore, please take your time to read through this information, and let us know if anything is unclear or if you require further information. </p>
-					
-					<p><b><br/>What does participation in this study entail?</b></p>
-					<div class='consentList'>
-						<ol>
-						<li style ='text-align:left;'>That you carefully read through this information and decide whether or not you wish to participate.</li> <br/>
-						<li style ='text-align:left;'>That you click the button 'I Accept' to give consent to participate in the experiment.</li> <br/>
-						<li style ='text-align:left;'>That you participate in an experiment wherein you are presented with different scenarios and make choices between different alternatives. 
-						As you do the task, your behavioural responses are recorded, as well as your web browser interactions.</li><br/>
-						<li style ='text-align:left;'>That you fill out a set of psychological questionnaires.</li><br/>
-						<li style ='text-align:left;'>That you, if asked, decide if you want to participate in the same experiment again.</li><br/>
-						</ol>
-					</div>
-					<p><b>The purpose of the study</b></p>
-					<p>The main purpose of this study is to investigate mechanisms of decision-making in healthy individuals. 
-					In the long run, we hope that our research will contribute to the understanding of both normal and problematic decision-making (e.g. in depression).</p>
-					
-					<p><b><br/>The outline of the study</b></p>
-					<p>The study involves one session. You will be asked to perform a computerized task, 
-					wherein you will be presented with different scenarios on a computer screen. 
-					An example of a scenario is: "You are in a factory where an accident is about to happen. 
-					If the accident takes place, you will incur a monetary loss. 
-					You can act to minimize the risk, but this entails a cost and it is not sure that you will manage to avoid the accident. 
-					You will be asked to choose between alternatives (act/not act) by pressing a button. You will never lose your own money during the task. 
-					You will receive an endowment at the beginning of the experiment and any eventual loss that you incur will be deducted from this endowment. 
-					You are going to get more detailed instructions before the task. 
-					At the end, you will be asked to answer a few questionnaires. 
-					The study will take about 1 hour and you will be compensated with £10. 
-					You may also earn up to £4 dependent on the outcomes of the choices during the task. 
-					You may be asked to participate in a similar but shorter experiment again. 
-					You will then be compensated with a further £5 and you will also have a chance to earn a bonus of up to £2.
-					<br/></p>
-					
-					<p><b><br/>Potential risks and discomfort</b></p>
-					<p>No risks or discomfort are expected.</p>
 
-					<p><b><br/>Please note that you have the right to quit your participation at any point during the experiment!</b><p>
-
-					<p>Your data are protected<br/>
-					The project will collect and record behavioral data but no personal data is collected. There is, therefore, no way for the researchers to trace the data back to your person. 
-					As such, you are completely anonymous when participating in this study.  
-					Researchers involved in the study are required to apply professional secrecy concerning everything that happens in your contact with us. 
-					When the study is finished, the information will be processed and presented statistically at group level, 
-					graphically or as numbers in a table wherein individual information will be untraceable. 
-					In the interest of transparency and reproducibility, de-identified data may be posted on an online depository such as Open Science Framework, 
-					to be available for other researchers. There will be no way for these data to be linked to you. 
-					After publication, information and data collected will be stored for at least 10 years. 
-					Archiving of information collected in this study is regulated by the Archiving Act and the Swedish National Archives is the regulatory authority. 
-					Data management and archiving will take place in accordance with Karolinska Insititutet's rules.</p>
-
-					<p><b><br/>How do you get information about the results of the study?</b></p>
-					<p>If you are interested in receiving information about the results of the study, 
-					feel free to mention it to the experiment leader through the messaging system on this website.
-					We will send you more information when the study is completed and the analyses are done.
-					Note that we cannot disclose individual results, only results at group level.</p>
-
-					<p><b><u><br/>Participation is voluntary.</u></b></p>
-					<p>Your participation is voluntary, and you can choose to quit at any time by closing the current tab of your web browser. 
-					If you choose not to participate or want to cancel your participation, you do not need to indicate why, 
-					you will however not be able to be compensated for your participation if you cancel your participation. </p>
-					
-					<p><b>Do you want to know more?</b><br/>
-					If you have questions or want more information you are welcome to contact the experimenter through the messaging system on this website. 
-					The Main researcher responsible for the study is Marc Guitart-Masip, Ph.D., at the Aging Research Centre at Karolinska Institutet in Sweden.</p>
-					
-					<p><b><br/>Consent to participate in the study</b> <br/> 
-					I have received written information about the study. I may keep the written information by right clicking and selecting to print the current screen. <br/> <br/>
-					- I agree to participate in the project <i>Quantifying prior beliefs about the world in decision-making</i> <br/> <br/>
-					- I agree that my data is saved in the manner described in the participant's information sheet. <br/> <br/>
-					If you click “I Accept” you agree to these terms and the experiment will begin, 
+					<p>If you click “I Accept” you agree to these terms and the experiment will begin, 
 					if you click “I Decline” the current tab will close, and your participation will be aborted.</p>
 				</div>
 			</div>`,
@@ -409,11 +333,11 @@
 	let participantID = {
 		type: jsPsychSurveyText,
 		preamble:
-			`<p>In order to be able to reward you for participating in this experiment, we need your Prolific ID. <br/>
+			`<p>In order to be able to reward you for participating in this experiment, we need your participant ID number. <br/>
 				It is very important that this is entered correctly. If it isn't entered correctly, we will not be able to compensate you for participating in this experiment. 
 				</p>`,
 		questions: [
-			{ prompt: `Please enter your Prolific ID here:`, name: `ID` },
+			{ prompt: `Please enter your ID here:`, name: `ID` },
 		],
 		data: {
 			category: `instructions`,
@@ -436,7 +360,7 @@
 	}
 	timeline.push(enterFullscreen);
 
-	let genInstructionBlockedRobberFactory = {
+	let generalInstruction = {
 		type: jsPsychHtmlKeyboardResponse,
 		choices: ` `,
 		data: {
@@ -484,7 +408,7 @@
 		]
 
 	};
-	timeline.push(genInstructionBlockedRobberFactory);
+	timeline.push(generalInstruction);
 
 	for (let k = 0; k < taskOrderRnd.length; k++) {
 
@@ -545,6 +469,7 @@
 		};
 
 		let catchTrial = {
+			//this is the attention check that is present during the tasks and are randomly placed in each block of the tasks
 			type: jsPsychHtmlKeyboardResponse,
 			stimulus: `<div class ='textDivGen'>
 					<p>This is an attention check, please respond by pressing the <b>arrow-key up</b> before the timer runs out</p>
