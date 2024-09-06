@@ -5,7 +5,7 @@ Author: Tobias Granwald (orcid: 0009-0002-0208-6891)
 The current repository contains code associated with the manuscript "Bayesian priors in active avoidance" (Granwald et al., 2024). 
 
 The repository contain the the unaltered code used to collect the data used in the manuscript (/task/manuscript_code/) along with a cleaned, simplified and annotated version of the task (/task/shared_task/) available for simple use for other researchers wishing to implement the task. 
-
+The unaltered code includes error in the comments that are fixed in the shared task. The code has also been simplified and fixed in the shared task. 
 
 The task was programmed by Tobias Granwald at Karolinska Institutet utilizing JavaScript, html and css to ensure that data can be collected online, it also uses the toolbox: jsPsych v 7.1.0 (de Leeuw, 2015).
 

@@ -1,3 +1,22 @@
+/*
+    File: experimentStyleSheet.css
+
+    Description:
+    This stylesheet along with jsPsych.css is responsible for the layout and design of the whole experiment.
+    This includes placements and size of stimuli, all aspects typography and other design elements.
+    This script is provided for public use 
+
+    Author: Tobias Granwald
+    Version: 1.0.0
+    Date: September 6, 2024
+
+    License: Creative Commons Attribution 4.0 International Public License
+
+    Additional Information:
+    - Dependencies: jsPsych v7.1.2: jspsych.css 
+    - How to use: Link this file in the HTML <head> section.
+*/
+
 .consentContainerDiv{
     width: 70%;
     position: relative;

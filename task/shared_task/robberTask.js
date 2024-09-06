@@ -1,6 +1,33 @@
+/**
+ * @file robberTask.js
+ * 
+ * This script loads two functions that creates jsPsych timelines to run the Robber task.
+ * The outputs of these functions provide the instructions for the task and a trial of the task.
+ * This version of the task is available for public use. 
+ * 
+ * @author Tobias Granwald
+ * @version 1.0.0
+ * @date September 6, 2024
+ * 
+ * @license CC-By Attribution 4.0 International
+ * 
+ * - Dependencies: jsPsych v7.1.2, experimentStyleSheet.css
+ * - How to run: load the script to a html file along with jsPsych and add the output of the function to the timeline.  
+ * 
+*/
+
+
 function robberTaskInfo(minValue, maxValue, minCost, maxCost, isFirstTime){
-        //This is the task info given if the task is with variable costs and trials.
-        //The instructions also include an enphasis on learning which robbers are easier win over.
+    /**
+     * [Function for the complete timeline of the instructions provided before the start of a block of the robber task]
+     * 
+     * @minValue {number} maximum size of the offer
+     * @maxValue {number} minimum size of the offer
+     * @minCost {number} maximum size of the cost
+     * @maxCost {number} minimum size of the cost
+     * @isFirstTime {boolean} distinguish instructions for the first time or second time the task is performed
+     * @returns {variable} jsPsych formatted timeline which is added to the general timeline
+     */	
 
     let robberTaskInfoVariableCost = {
         type: jsPsychHtmlKeyboardResponse,
@@ -138,23 +165,22 @@ function robberTaskInfo(minValue, maxValue, minCost, maxCost, isFirstTime){
 
 
 function robberTrial(robber, offer, winProbAct, costFight, noActValue, trial, ITI, IET, maxChoiceT, delibT, outcomeT, isPractice) {
-    // Function for the complete timeline of a robber trial
-
-    // The function also includes practice versions of each choice version.  
-
-    /// Inputs are: 
-    // machine = # of the machine
-    // offer = # of offer
-    // costFight = cost of fighting
-    // noActValue = cost of not fighting
-    // trial = trial number
-    // ITI = length of inter trial interval in ms
-    // IET = time initial endowment is shown in ms
-    // maxChoiceT = maximum response time before not fight is chosen in ms
-    // delibT = time deliberation screen is shown in ms
-    // outcomeT = time outcome is shown in ms 
-    // isPractice = true or false, if the practice trial should be shown or not
- 
+	/**
+     * [Function for the complete timeline of a robber task trial, includes practice trial version]
+     * 
+     * @robber {string} The filename of the stimulus
+     * @offer {number} The offer shown on in the trial
+     * @winProbAct {number} The probability of success when active action is chosen
+     * @costFight {number} cost of the active action
+     * @noActValue {number} value the passive action (0, in this case. Is only used to save in data)
+     * @ITI {number} length of inter trial interval in ms
+     * @IET {number} time the offer is shown before choice time starts in ms
+     * @maxChoiceT {number} maximum response time before in ms
+     * @delibT {number} time the post decision screen is shown in ms
+     * @outcomeT {number} time outcome screen is shown in ms 
+     * @isPractice {boolean} true or false, if the practice trial should be shown or not
+     * @returns {variable} jsPsych formatted timeline for one trial
+     */	
 
     let robberImg = `<div class='choiceStimDiv'><img src ='${robber}' class='robberChoiceStim'></div>`;
     let offerPrompt = `<div class='robberChoiceIE'> <p><b>You have:</p> <h1> ${offer} $$ </h1> <p>on your person</b></p></div>`;
