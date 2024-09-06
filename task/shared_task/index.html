@@ -234,7 +234,7 @@
 	let robberValueArray = robberValueMatrix[0].concat(robberValueMatrix[1] , robberValueMatrix[2]);
 	let costsRobber = robberCostMatrix[0].concat(robberCostMatrix[1],robberCostMatrix[2]);	
 
-	let offersArrayRobber = robberValueArray.map(function (each_element) { // Now we round the IEs to remove decimals
+	let offersArrayRobber = robberValueArray.map(function (each_element) { // Now we round the offers to remove decimals
 		return Number(each_element.toFixed(0));
 	});
 
@@ -289,7 +289,7 @@
 	let offersArrayFactory = factoryValueMatrix[0].concat(factoryValueMatrix[1], factoryValueMatrix[2])
 	let costFactory = factoryCostMatrix[0].concat(factoryCostMatrix[1], factoryCostMatrix[2])
 
-	offersArrayFactory = offersArrayFactory.map(function (each_element) { // Now we round the IEs to remove decimals
+	offersArrayFactory = offersArrayFactory.map(function (each_element) { // Now we round the offers to remove decimals
 		return Number(each_element.toFixed(0));
 	});
 
@@ -338,7 +338,7 @@
 				<div class='textDivConsent'>
 					<h1>Informed consent <br></h1>
 
-					<h1>TEXT OF ADD INFORMED CONSENT HERE </H1>
+					<h1>ADD TEXT OF INFORMED CONSENT HERE </H1>
 
 
 					<p>If you click “I Accept” you agree to these terms and the experiment will begin, 
