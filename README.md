@@ -9,7 +9,7 @@ The unaltered code includes error in the comments that are fixed in the shared t
 
 The task was programmed by Tobias Granwald at Karolinska Institutet utilizing JavaScript, html and css to ensure that data can be collected online, it also uses the toolbox: jsPsych v 7.1.0 (de Leeuw, 2015).
 
-## Referenses
+## References
 Granwald, T., Dayan, P., Lengyel, M., & Guitart-masip, M. (2024, August 8). Bayesian Priors in Active Avoidance. https://doi.org/10.31234/osf.io/2zcjh
 
 de Leeuw, J. R. (2015). jsPsych: A JavaScript library for creating behavioral experiments in a web browser. Behavior Research Methods, 47(1), 1-12. doi:10.3758/s13428-014-0458-y.
