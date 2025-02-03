@@ -1,0 +1,163 @@
+---
+title: "Figure 2"
+author: "Tobias Granwald"
+date: "2025-02-03"
+output: html_document
+---
+
+# Figure 2
+
+## Setup
+
+```{r create figure dir, echo=FALSE, warning=FALSE, message=FALSE}
+mainDir <- getwd()
+subDir <- "figures"
+#check if the dir already exists if not create it
+ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+```
+
+```{r load packages, echo=FALSE, message=FALSE, warning=FALSE}
+library("R.matlab")
+```
+
+```{r functions, echo= FALSE, message=FALSE, warning=FALSE}
+logistic <- function(x){
+  return(1/(1+exp(-x)))
+}
+
+plot_scatter_dist<- function(x, y, 
+                             xlab = "", ylab = "", title = "",
+                             xlim = c(min(y),max(y)), ylim = c(min(y),max(y)),
+                             colDot = "black", alpha,
+                             plotLab = "",
+                             plotLabY = 1.5, plotLabX = -0.15){
+  
+  # main plot
+  par(fig = c(0,0.8,0,0.8), mar = c(5, 6, 1, 2)+0.1, oma = c(0,0,3,0))
+  plot(x,y,
+       xlim = xlim,
+       ylim = ylim,
+       xlab = xlab,
+       ylab = ylab,
+       col = colDot,
+       cex.axis = 1.8,
+       cex.lab = 2,
+       cex = 1.8,
+       lwd = 2,
+       family = "Arial"
+  )
+
+  abline(lm(y~x), lty = 2, col= "tomato3",  lwd = 2) #regression line
+  abline(0,1, lwd = 1.5) #identity line
+  
+  #plot lable
+  text(x = plotLabX, y = plotLabY, plotLab, 
+       xpd = NA, 
+       cex = 3.5, font = 2, family = "Arial")
+  
+  #mean lines
+  abline(v = mean(x), lty = 3)
+  abline(h = mean(y), lty = 3)
+  
+  #density plot y axis
+  par(fig = c(0.022,0.80,0.65,1), new = TRUE, mar = c(5, 5, 1, 2)+0.1)
+  plot(density(x)$x, density(x)$y,
+       type = "l",
+       xlab = "",
+       ylab = "",
+       bty="n",
+       xaxt="n",
+       yaxt="n",
+       xlim =xlim,
+       lwd= 2.5)
+  # mean line
+  abline(v = mean(x), lty = 3)
+  
+  #density plot y axis
+  par(fig = c(0.63,1,0,0.8), new = TRUE, mar = c(5, 5, 1, 2)+0.1)
+  plot(density(y)$y, density(y)$x,
+       ylab = "",
+       xlab = "",
+       bty = "n",
+       main = "",
+       type = "l",
+       yaxt = "n",
+       xaxt = "n",
+       ylim = ylim,
+       lwd = 2.5)
+  # mean line
+  abline(h = mean(y), lty = 3)
+  
+  #title lab
+  mtext(title, side = 3, outer = TRUE, line=-1,
+        cex = 2.5, family = "Arial", font = 2)
+}
+```
+
+## Load data
+
+```{r load best fitting models, eval= T, echo=FALSE}
+# All participants fitted with best fitting model from above stepwise model comparison
+## Block 1
+cbmF1_staticP_actBias <-  readMat("computational_models/HBI_factory1/hbi_fitsim_static2ActBias_factory1.mat")
+cbmR1_bayes_basic <- readMat("computational_models/HBI_robber1/hbi_fitSim_priorMS_robber1.mat")
+
+## Block 2
+cbmR2_bayes_basic <- readMat("computational_models/HBI_robber2/hbi_fitSim_priorMS_robber2.mat")
+cbmF2_bayes_actBias <- readMat("computational_models/HBI_factory2/hbi_fitSim_bayes2ActBias_factory2.mat")
+```
+
+```{r transform parameters, echo=FALSE, message=FALSE, warning=FALSE}
+# Block 1
+F1_p <- logistic(cbmF1_staticP_actBias$cbm[[5]][[1]][[1]][[1]][,1])
+R1_mu <- logistic(cbmR1_bayes_basic$cbm[[5]][[1]][[1]][[1]][,1])
+
+# Block 2
+F2_mu <- logistic(cbmF2_bayes_actBias$cbm[[5]][[1]][[1]][[1]][,1])
+R2_mu <- logistic(cbmR2_bayes_basic$cbm[[5]][[1]][[1]][[1]][,1])
+
+F2_sigma <- logistic(cbmF2_bayes_actBias$cbm[[5]][[1]][[1]][[1]][,2])
+R2_sigma <- logistic(cbmR2_bayes_basic$cbm[[5]][[1]][[1]][[1]][,2])
+```
+
+
+## Plots
+```{r plot_correlation_between_params_sepPlots,echo=FALSE, message=FALSE, warning=FALSE, out.width=300}
+png(filename = "figures/Fig2a.png",width = 630, height = 630)
+plot_scatter_dist(x = R1_mu, y = F1_p,
+                    xlab = expression(Robber~Task:~mu[0]),
+                    ylab = expression(Factory~Task:~italic(p)),
+                    title = "Block 1",
+                    xlim = c(0,1),
+                    ylim = c(0,1),
+                    plotLab = "A",
+                    colDot = "steelblue3")
+dev.off()
+
+png(filename = "figures/Fig2b.png",width = 630, height = 630)
+plot_scatter_dist(x = R2_mu, y = F2_mu,
+                    xlab = expression(Robber~Task:~mu[0]),
+                    ylab = expression(Factory~Task:~mu[0]),
+                    title = "Block 2",
+                    xlim = c(0,1),
+                    ylim = c(0,1),
+                    plotLab= "B",
+                    colDot = "steelblue3", 
+                  alpha = 0.4)
+dev.off()
+
+png(filename = "figures/Fig2c.png",width = 630, height = 630)
+plot_scatter_dist(x = R2_sigma, y = F2_sigma,
+                    xlab = expression(Robber~Task:~sigma[0]^2),
+                    ylab = expression(Factory~Task:~sigma[0]^2),
+                    title = "",
+                    xlim = c(0,1),
+                    ylim = c(0,1),
+                    plotLab = "C",
+                    colDot = "steelblue3")
+
+dev.off()
+```
+## Figure caption
+
+**Figure 2. Correlations between parameters of the prior across tasks.** Scatter plots show each participant’s extracted parameters for each task and block. The dotted lines indicate the means of the parameters, and the diagonal indicates a perfect correlation. The red dashed lines are regression lines. Distributions above and to the right of the scatter plots show the kernel density estimates of the corresponding parameter values. Reported p-values from permutation test with 10 000 permutations. a) Participants’ parameter values for the µ0 and *p* parameters in the first block of the robber and factory task, respectively. b) Participants’ parameter values for the µ0 parameter in the second block of the robber and factory task. c) Same as b but for the σ02 parameter.

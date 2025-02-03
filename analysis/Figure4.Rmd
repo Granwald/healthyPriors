@@ -1,0 +1,227 @@
+---
+title: "Figure 4"
+author: "Tobias Granwald"
+date: "2025-02-03"
+output: html_document
+---
+
+
+# Setup
+
+```{r create figure dir, echo=FALSE, warning=FALSE, message=FALSE}
+mainDir <- getwd()
+subDir <- "figures"
+#check if the dir already exists if not create it
+ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+```
+
+```{r load packages, echo=FALSE, message=FALSE, warning=FALSE}
+library("R.matlab")
+```
+
+## functions
+```{r}
+logistic <- function(x){
+  return(1/(1+exp(-x)))
+}
+
+
+plot_scatter_dist<- function(x, y, xlab = "", ylab = "", title ="", xlim =c(min(y),max(y)),ylim =c(min(y),max(y)), colDot = "black", alpha, plotLab = "", plotLabY = 1.5, plotLabX = -0.2){
+
+  par(fig=c(0,0.8,0,0.8), mar = c(5, 6, 1, 2)+0.1, oma= c(0,0,3,0))
+  plot(x,y,
+       xlim = xlim,
+       ylim = ylim,
+       xlab = " ", #xlab,
+       ylab = " ",#ylab,
+       col = colDot,
+       cex.axis = 2,
+       cex.lab = 2.5,
+       cex = 1.8,
+       lwd = 2,
+       familiy = "Arial"
+  ) 
+  mtext(text = xlab, side = 1, line = 3.8, cex =2.5,  family = "Arial")
+  mtext(text = ylab, side = 2, line = 2.5, cex =2.5,  family = "Arial")
+  abline(lm(y~x), lty = 2, col= "tomato3",  lwd = 3)
+  text(x = plotLabX, y = plotLabY, plotLab,xpd=NA, cex = 3.5, font = 2, family = "Arial")
+  abline(0,1, lwd = 1.5)
+  abline(v = mean(x), lty = 3)
+  abline(h = mean(y), lty = 3)
+  
+  par(fig=c(0.022,0.80,0.65,1), new=TRUE, mar = c(5, 5, 1, 2)+0.1)
+  plot(density(x)$x, density(x)$y,
+       type = "l",
+       xlab = "",
+       ylab = "",
+       bty="n",
+       xaxt="n",
+       yaxt="n",
+       xlim =xlim,
+       lwd= 2.5)
+  abline(v = mean(x), lty = 3)
+  
+  par(fig=c(0.63,1,0,0.8), new=TRUE, mar = c(5, 5, 1, 2)+0.1)
+  plot(density(y)$y, density(y)$x,
+       ylab = "",
+       xlab ="",
+       bty="n",
+       main = "",
+       type = "l",
+       yaxt="n",
+       xaxt="n",
+       ylim =ylim,
+       lwd = 2.5)
+  abline(h = mean(y), lty = 3)
+  
+  mtext(title, side=3, outer = TRUE, line = -1, cex = 2.5, familiy = "Arial", font = 2)
+  
+}
+```
+
+
+## load data
+
+### Session 1 
+```{r, load_models_testRetest, echo=FALSE, message=FALSE, warning=FALSE}
+cbmFull1_1prior <-  readMat("computational_models/HBI_full1/hbi_fitSim_1prior_full1.mat")
+cbmFull2_1prior <- readMat("computational_models/HBI_full2/hbi_fitSim_1priorFActBias_full2.mat")
+```
+
+```{r transform_params_day1, echo=FALSE, message=FALSE, warning=FALSE}
+mu_day1 <- matrix(nrow =  nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  mu_day1[subj,1] <- logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_day1[subj,2] <- logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,1])
+}
+
+sigmarel_day1 <- matrix(nrow =  nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  sigmarel_day1[subj,1] <- logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_day1[subj,2] <- logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,2])
+}
+
+```
+
+### Follow-up
+
+```{r load_models_testRetest_follow-up, echo=FALSE, message=FALSE, warning=FALSE}
+prior_FU_b1 <- readMat("computational_models/HBI_testRetest/Full1/hbi_fitSim_1prior_full1.mat")
+prior_FU_b2 <- readMat("computational_models/HBI_testRetest/Full2/hbi_fitSim_1prior_full2.mat")
+prior_FU_FU <- readMat("computational_models/HBI_testRetest/Full_FU/hbi_fitSim_1prior_full_FU.mat")
+```
+
+```{r transform_params_follow-up, echo=FALSE, message=FALSE, warning=FALSE}
+mu_week <- matrix(nrow =  nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]), 
+                  ncol = 3)
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  mu_week[subj,1] <- logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_week[subj,2] <- logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_week[subj,3] <- logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,1])
+}
+
+sigmarel_week <- matrix(nrow = nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]),
+                        ncol = 3)
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  sigmarel_week[subj,1] <- logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_week[subj,2] <- logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_week[subj,3] <- logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,2])
+}
+
+```
+
+
+# Plots
+
+## Fig. 4a
+
+```{r}
+png(filename = "figures/Fig4a.png",width = 630, height = 630)
+plot_scatter_dist(x = mu_day1[,1],
+                  y = mu_day1[,2],
+                  xlab = expression(Block~1:~mu[0]),
+                  ylab = expression(Block~2:~mu[0]),
+                  title ="Block 1 and 2",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "A")
+dev.off()
+```
+
+## Fig. 4b
+
+```{r}
+png(filename = "figures/Fig4b.png",width = 630, height = 630)
+plot_scatter_dist(x = mu_week[,1],
+                  y = mu_week[,3],
+                  xlab = expression(Block~1:~mu[0]),
+                  ylab = expression(Follow-Up:~mu[0]),
+                  title ="Block 1 and Follow-up",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "B")
+dev.off()
+```
+
+## Fig. 4c
+
+```{r}
+png(filename = "figures/Fig4c.png",width = 630, height = 630)
+plot_scatter_dist(x = mu_week[,2],
+                  y = mu_week[,3],
+                  xlab = expression(Block~2:~mu[0]),
+                  ylab = expression(Follow-Up:~mu[0]),
+                  title ="Block 2 and Follow-up",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "C")
+dev.off()
+```
+
+## Fig. 4d
+
+```{r}
+png(filename = "figures/Fig4d.png",width = 630, height = 630)
+plot_scatter_dist(x = sigmarel_day1[,1],
+                  y = sigmarel_day1[,2],
+                  xlab = expression(Block~1:~sigma[0]^2),
+                  ylab = expression(Block~2:~sigma[0]^2),
+                  title =" ",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "D")
+dev.off()
+```
+
+## Fig. 4e
+
+```{r}
+png(filename = "figures/Fig4e.png",width = 630, height = 630)
+plot_scatter_dist(x = sigmarel_week[,1],
+                  y = sigmarel_week[,3],
+                  xlab = expression(Block~1:~sigma[0]^2),
+                  ylab = expression(Follow-Up:~sigma[0]^2),
+                  title =" ",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "E")
+dev.off()
+```
+
+## Fig. 4f
+
+```{r}
+png(filename = "figures/Fig4f.png",width = 630, height = 630)
+plot_scatter_dist(x = sigmarel_week[,2],
+                  y = sigmarel_week[,3],
+                  xlab = expression(Block~2:~sigma[0]^2),
+                  ylab = expression(Follow-Up:~sigma[0]^2),
+                  title =" ",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "F")
+dev.off()
+```
+
