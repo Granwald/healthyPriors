@@ -1,0 +1,205 @@
+---
+title: "Extract_for_HBI"
+author: "Tobias Granwald"
+date: "2025-02-03"
+output: html_document
+---
+
+# setup
+
+```{r load packages, echo=FALSE}
+library("R.matlab")
+```
+
+
+## load data
+```{r load_data, echo=FALSE, message=FALSE,warning=FALSE}
+D <- read.delim("data/extractedData.csv", header = TRUE, sep = ",")
+D2 <- read.delim("data/extractedData_FU.csv", header = TRUE, sep = ",")
+```
+
+## extract data function
+
+```{r function for matlab data}
+extractDataMatlab <- function(data, NTrials,listSubjID, subDirStr){
+  data$success <- as.numeric(data$success)
+  data$act <- as.numeric(data$act)
+  
+  offers        <- matrix(nrow = length(listSubjID), ncol = NTrials)
+  act           <- matrix(nrow = length(listSubjID), ncol = NTrials)
+  success       <- matrix(nrow = length(listSubjID), ncol = NTrials)
+  task          <- matrix(nrow = length(listSubjID), ncol = NTrials)
+  costs         <- matrix(nrow = length(listSubjID), ncol = NTrials)
+  noActValues   <- matrix(nrow = length(listSubjID), ncol = NTrials)
+  winProbs      <- matrix(nrow = length(listSubjID), ncol = NTrials)
+  stimTrialList <- matrix(nrow = length(listSubjID), ncol = length(unique(data[data$subjID_anon==listSubjID[1] ,]$stimNo)))
+  
+  
+  for (i in 1:length(listSubjID)) {
+    offers[i,] <- data[data$subjID_anon==listSubjID[i], ]$offers
+  }
+  
+  for (i in 1:length(listSubjID)) {
+    act[i,] <- data[data$subjID_anon==listSubjID[i], ]$act
+  }
+  
+  for (i in 1:length(listSubjID)) {
+    success[i,] <- data[data$subjID_anon==listSubjID[i], ]$success
+  }
+  
+  for (i in 1:length(listSubjID)) {
+    winProbs[i,] <- data[data$subjID_anon==listSubjID[i], ]$probWin
+  }
+  data$taskNum <- 0
+  if (length(unique(data$task))>1){
+    data[data$task=="robber" ,]$taskNum <- 1
+    data[data$task=="factory" ,]$taskNum <- 2
+  }else{
+    currentTask <- unique(data$task)
+    data[data$task==currentTask ,]$taskNum <- ifelse(test = currentTask=="robber", yes =  1, no = 2)
+  }
+  
+  
+  for (i in 1:length(listSubjID)) {
+    task[i,] <- data[data$subjID_anon==listSubjID[i], ]$taskNum
+  }
+  
+  for (i in 1:length(listSubjID)) {
+    
+    for (j in 1:length(unique(data[data$subjID_anon==listSubjID[i], ]$stimNo))) {
+     stimTrialList[i,j] <- sum(data[data$subjID_anon==listSubjID[i], ]$stimNo==unique(data[data$subjID_anon==listSubjID[i], ]$stimNo)[j])
+    }
+  }
+  
+  for (i in 1:length(listSubjID)) {
+    costs[i,] <- data[data$subjID_anon==listSubjID[i], ]$cost
+  }
+  
+  for (i in 1:length(listSubjID)) {
+    noActValues[i,] <- data[data$subjID_anon==listSubjID[i], ]$noActValue
+  }
+  
+  writeMat("offers.mat", offers=offers)
+  writeMat("act.mat", act=act)
+  writeMat("success.mat", success=success)
+  writeMat("task.mat", task=task)
+  writeMat("costs.mat", costs=costs)
+  writeMat("noActValues.mat", noActValues=noActValues)
+  writeMat("winProbs.mat", winProbs=winProbs)
+  writeMat("stimTrialList.mat", stimTrialList=stimTrialList)
+  #create folder
+  mainDir <- getwd()
+  subDir <- subDirStr
+  
+  matlabFiles <- c("offers.mat", "act.mat", "success.mat", "task.mat", "costs.mat", "noActValues.mat","winProbs.mat", "stimTrialList.mat")
+  
+  ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+  #move the files to the folder
+  file.remove(paste0(file.path(mainDir,subDir),"/", matlabFiles))#remove old versions 
+  
+  file.copy(from = paste0(mainDir, "/", matlabFiles),
+            to = paste0(file.path(mainDir,subDir),"/", matlabFiles))
+  
+  file.remove(paste0(file.path(mainDir),"/", matlabFiles))#remove new from base folder
+}
+```
+
+# extract from main data
+
+```{r}
+listSubjID <- unique(D$subjID_anon)
+DChoice <- D[D$category=="choice" ,]
+DChoice <- DChoice[DChoice$response!="null", ]
+
+DChoice$act <- as.numeric(DChoice$act)
+
+DChoiceRobber <- DChoice[DChoice$task=="robber" , ]
+DChoiceRobber1 <- DChoiceRobber[DChoiceRobber$trial<60, ]
+DChoiceRobber2 <- DChoiceRobber[DChoiceRobber$trial>59, ]
+
+
+DChoiceFactory <- DChoice[DChoice$task=="factory" , ]
+
+DChoiceFactory1 <- DChoiceFactory[DChoiceFactory$trial<60, ]
+DChoiceFactory2 <- DChoiceFactory[DChoiceFactory$trial>59, ]
+
+
+DChoice1 <- rbind(DChoiceRobber1, DChoiceFactory1)
+DChoice2 <- rbind(DChoiceRobber2, DChoiceFactory2)
+```
+
+
+### Robber 1
+
+````{r, eval=T}
+extractDataMatlab(data = DChoiceRobber1, NTrials = 60, listSubjID = listSubjID,
+                  subDirStr = "computational_models/HBI_robber1/dataRaw")
+````
+
+### Factory 1
+
+```{r, eval=T}
+extractDataMatlab(data = DChoiceFactory1, NTrials = 60,listSubjID = listSubjID, 
+                  subDirStr = "computational_models/HBI_factory1/dataRaw")
+```
+
+### Full 1
+
+````{r, eval=T}
+extractDataMatlab(data = DChoice1, NTrials = 120, listSubjID = listSubjID, 
+                  subDirStr = "computational_models/HBI_full1/dataRaw")
+````
+
+### Robber 2
+
+````{r, eval=T}
+extractDataMatlab(data = DChoiceRobber2, NTrials = 60, listSubjID = listSubjID, 
+                  subDirStr = "computational_models/HBI_robber2/dataRaw/")
+````
+
+### Factory 2
+
+```{r, eval=T}
+extractDataMatlab(data = DChoiceFactory2, NTrials = 60, listSubjID = listSubjID, 
+                  subDirStr = "computational_models/HBI_factory2/dataRaw")
+```
+
+### Full 2
+
+````{r, eval=T}
+extractDataMatlab(data = DChoice2, NTrials = 120, listSubjID = listSubjID, 
+                  subDirStr = "computational_models/HBI_full2/dataRaw/")
+````
+
+
+# extract from main test retest FU
+
+```{r}
+listSubjID2 <- unique(D2$subjID_anon)
+DChoiceFU <- D2[D2$category=="choice" ,]
+DChoiceFU <- DChoiceFU[DChoiceFU$response!="null", ]
+
+DChoiceFU$act <- as.numeric(DChoiceFU$act)
+```
+
+
+### Full 1
+
+````{r, eval=T}
+extractDataMatlab(d = DChoice1, NTrials = 120, listSubj = listSubjID2, 
+                  subDirStr = "computational_models/HBI_testRetest/Full1/dataRaw/")
+````
+
+### Full 2
+
+````{r, eval=T}
+extractDataMatlab(d = DChoice2, NTrials = 120, listSubj = listSubjID2, 
+                  subDirStr = "computational_models/HBI_testRetest/Full2/dataRaw/")
+````
+
+### Full FU
+
+````{r, eval=T}
+extractDataMatlab(d = DChoiceFU, NTrials = 120, listSubj = listSubjID2,
+                  subDirStr = "computational_models/HBI_testRetest/Full_FU/dataRaw")
+````
