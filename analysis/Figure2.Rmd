@@ -100,10 +100,10 @@ plot_scatter_dist<- function(x, y,
 # All participants fitted with best fitting model from above stepwise model comparison
 ## Block 1
 cbmF1_staticP_actBias <-  readMat("computational_models/HBI_factory1/hbi_fitsim_static2ActBias_factory1.mat")
-cbmR1_bayes_basic <- readMat("computational_models/HBI_robber1/hbi_fitSim_priorMS_robber1.mat")
+cbmR1_bayes_basic <- readMat("computational_models/HBI_robber1/hbi_fitSim_bayes_robber1.mat")
 
 ## Block 2
-cbmR2_bayes_basic <- readMat("computational_models/HBI_robber2/hbi_fitSim_priorMS_robber2.mat")
+cbmR2_bayes_basic <- readMat("computational_models/HBI_robber2/hbi_fitSim_bayes_robber2.mat")
 cbmF2_bayes_actBias <- readMat("computational_models/HBI_factory2/hbi_fitSim_bayes2ActBias_factory2.mat")
 ```
 

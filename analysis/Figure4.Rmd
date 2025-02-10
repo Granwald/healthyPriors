@@ -84,8 +84,8 @@ plot_scatter_dist<- function(x, y, xlab = "", ylab = "", title ="", xlim =c(min(
 
 ### Session 1 
 ```{r, load_models_testRetest, echo=FALSE, message=FALSE, warning=FALSE}
-cbmFull1_1prior <-  readMat("computational_models/HBI_full1/hbi_fitSim_1prior_full1.mat")
-cbmFull2_1prior <- readMat("computational_models/HBI_full2/hbi_fitSim_1priorFActBias_full2.mat")
+cbmFull1_1prior <- readMat("computational_models/HBI_full1/hbi_fitSim_1prior_full1.mat")
+cbmFull2_1prior <- readMat("computational_models/HBI_full2/hbi_fitSim_1prior_full2.mat")
 ```
 
 ```{r transform_params_day1, echo=FALSE, message=FALSE, warning=FALSE}
