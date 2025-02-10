@@ -1,14 +1,16 @@
+%Setup
 clear all;
+WD = pwd;
 
 %add CMB to matlab path
 
-addpath(fullfile('/home/tobias.granwald/Documents/cbm-master', 'codes'));
+addpath(fullfile('PATH_TO_CBM_TOOLBOX/cbm-master', 'codes'));
 
-cd('/home/tobias.granwald/Documents/Projects/Study1_Looking_4_priors/manuscript_analysis/HBI_robber2/')
+%return to working 
+cd(WD)
 
 %copy models
-mkdir('models');
-copyfile '/home/tobias.granwald/Documents/Projects/Study1_Looking_4_priors/manuscript_analysis/Models/robber_only/models/*' models/
+copyfile 'PATH_TO_COMPUTATIONAL_MODELS/Models/robber_only/models/*' models/
 
 %load data
 fdata = load('all_data_R2.mat');
