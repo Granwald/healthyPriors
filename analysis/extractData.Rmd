@@ -1,0 +1,693 @@
+---
+title: "extractData"
+author: "Tobias Granwald"
+date: "2025-02-13"
+output: html_document
+---
+
+# Setup
+
+```{r load useful functions, echo=FALSE}
+source("functions/extractQs.R")
+
+extractQs_AC_IDSSR <-  function(responses, nSubj, maxItem, correctResponse){
+  Q <- matrix(nrow = nSubj, ncol = 2)
+  Q[,1] <- responses
+  #remove everything execept response to Attention check
+  Q[,1] <- gsub('\\}',"",Q[,1])
+  Q[,1] <- gsub('\\{',"",Q[,1])
+  Q[,1] <- gsub('\\"',"",Q[,1])
+  Q[,1] <- gsub('([.])',"",Q[,1])
+  Q[,1] <- gsub('([ ])',"",Q[,1])
+  Q[,1] <- gsub("(['])","",Q[,1])
+  Q[,1] <- gsub("\\(","",Q[,1])
+  Q[,1] <- gsub("\\)","",Q[,1])
+  Q[,1] <- gsub("-","",Q[,1])
+  Q[,1] <- gsub(paste0('.+,',maxItem,':+.'), "",Q[,1])
+  Q[,1] <- gsub(",9A:+.+,+9B:+.+", "",Q[,1])
+  Q[,1] <- gsub('([A-z])', "",Q[,1])
+  Q[,1] <- gsub(',', "",Q[,1])
+  Q[,1] <- gsub(':', "",Q[,1])
+  
+  # check correct response
+  Q[,1] <- gsub(correctResponse, "",Q[,1])
+  
+  # if correct response Q[,1] should now be empty
+  Q[,2] <- ifelse(Q[,1]== "", yes = 0, no = 1)
+  
+  return(as.numeric(Q[,2]))
+}
+
+
+extractQs_AC_CESD <-  function(responses, nSubj, maxItem, correctResponse){
+  Q <- matrix(nrow = nSubj, ncol = 2)
+  Q[,1] <- responses
+  #remove everything execept response to Attention check
+  Q[,1] <- gsub('\\}',"",Q[,1])
+  Q[,1] <- gsub('\\{',"",Q[,1])
+  Q[,1] <- gsub('\\"',"",Q[,1])
+  Q[,1] <- gsub('([.])',"",Q[,1])
+  Q[,1] <- gsub('([ ])',"",Q[,1])
+  Q[,1] <- gsub("(['])","",Q[,1])
+  Q[,1] <- gsub("\\(","",Q[,1])
+  Q[,1] <- gsub("\\)","",Q[,1])
+  Q[,1] <- gsub("-","",Q[,1])
+  Q[,1] <- gsub(paste0('.+,',maxItem,':+.'), "",Q[,1])
+  Q[,1] <- gsub(".+day","",Q[,1])
+  Q[,1] <- gsub('([A-z])', "",Q[,1])
+  Q[,1] <- gsub(',:', "",Q[,1])
+  
+  # check correct response
+  Q[,1] <- gsub(correctResponse, "",Q[,1])
+  
+  # if correct response Q[,1] should now be empty
+  Q[,2] <- ifelse(Q[,1]== "", yes = 0, no = 1)
+  
+  return(as.numeric(Q[,2]))
+}
+
+```
+
+
+# Load main data
+
+```{r load raw data}
+NrowsCorrData <- 1580
+fileOfData <- "data/dataRaw/"
+errorFiles <- "data/dataRaw/errorData/"
+listDataFiles <- list.files(path = paste0(fileOfData), pattern = "priors")
+mainDir <- getwd()
+subDir <- errorFiles
+
+ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+
+D <- NULL
+errorData <- NULL
+temp <- NULL
+for (iFiles in listDataFiles) {
+  temp <- read.delim(paste0(fileOfData,iFiles), header = T, sep = ",")
+  #remove participants with incomplete data (shorter than NrowsCorrData) or who failed to respond in more than 10 trials across the tasks (NrowsCorrData+10*5) 10*5 is because each missed trial gives 5 additional rows. 
+  if (nrow(temp)< NrowsCorrData | nrow(temp)> NrowsCorrData+10*5){ 
+    file.copy(from = paste0(fileOfData,iFiles), to = paste0(errorFiles,iFiles)) #move to a separate folder for inspection
+    # 77 files are moved, 76 with incomplete data, 1 with more than 10 missed trials
+  }else {
+    #remove participants where rows have NA in trial_index, indicating errors in jsPsych or errors in recording of the data
+    if (sum(is.na(temp$trial_index))>0) {
+      file.copy(from = paste0(fileOfData,iFiles), to = paste0(errorFiles,iFiles))#move to a separate folder for inspection
+      # none removed
+    }else{
+      D <- rbind(D,temp)
+    }
+  }
+  temp <- NULL
+}
+
+listSubjID <- unique(D$subjID)
+
+```
+
+
+```{r remove participants without valid participant id}
+
+D <- D[!is.na(D$subjID), ]
+listSubjID <- unique(D$subjID)
+
+# Only participant with error here had added "...@email.prolific.com" to prolific ID
+# As such this step was skipped
+#for (i in listSubjID) {
+#  if (nchar(i)!=24){
+#    print(i)
+#    D <- D[D$subjID!=i ,]
+#  }
+#}
+D$subjID <- substr(D$subjID, 1, 24)
+
+# Remove second part of the data with double data
+D_issue <- D[D$subjID=="PROLIFIC_ID_ANONOMIZED", ]
+D <- D[D$subjID!="PROLIFIC_ID_ANONOMIZED", ]#participant with doubled data removed
+D_issue <- D_issue[!duplicated(D_issue$trial_index),] # remove duplicate trials
+# remove second oMSTResults
+D_issue <- D_issue[1:D_issue[D_issue$category=="oMSTResult" ,]$trial_index[1]+2,]
+
+D<- rbind(D, D_issue)
+
+listSubjID <- unique(D$subjID)
+```
+
+
+
+```{r remove participants that failed attention checks}
+subjMissedCatchTrial2 <- NULL
+maxMissedAttentionChecks <- 2
+
+D <- D[!is.na(D$trial_type), ]
+
+for (i in listSubjID) {
+  if (maxMissedAttentionChecks<sum(D[D$category=="catchTrial" & D$subjID==i, ]$response == "null")){
+    subjMissedCatchTrial2 <- c(subjMissedCatchTrial2, i)
+  }
+}
+
+if (length(subjMissedCatchTrial2)>0){
+  for (i in subjMissedCatchTrial2) {
+    D <- D[D$subjID!=i ,]
+  }
+}
+
+listSubjID <- unique(D$subjID)
+
+length(subjMissedCatchTrial2)
+```
+1 participant removed due to failing attention checks
+
+
+## extract data for analysis
+```{r}
+D$subjID <- substr(D$subjID, 1, 24)
+DChoice <- D[D$category=="choice" ,]
+#DChoice <- DChoice[DChoice$response!="null", ]
+```
+
+
+```{r remove unused collumns}
+DChoiceReduced <- DChoice[,c(5:6,8:10,15:(ncol(DChoice)-7))]
+```
+
+### PANAS: Positive Affect
+
+```{r load_PANAS}
+
+#Watson, D., Clark, L. A. & Tellegen, A. Development and Validation of Brief Measures of Positive and Negative Affect: The PANAS Scales. Journal of Personality and Social Psychology 54, 1063–1070 (1988).
+
+# The structure of the raw data is as recorded in a single cell with the following structure:
+#"{\"1\":\"4. Quite a Bit\",\"2\":\"1. Very Slightly or Not at All\",\"3\":\"4. Quite a Bit\",\"4\":\"1. Very Slightly or Not at All\",\"5\":\"3. Moderately \",\"6\":\"1. Very Slightly or Not at All\",\"7\":\"1. Very Slightly or Not at All\",\"8\":\"2. A Little\",\"9\":\"4. Quite a Bit\",\"10\":\"5. Extremely\",\"11\":\"3. Moderately \",\"12\":\"5. Extremely\",\"13\":\"2. A Little\",\"14\":\"4. Quite a Bit\",\"15\":\"3. Moderately \",\"16\":\"4. Quite a Bit\",\"17\":\"4. Quite a Bit\",\"18\":\"1. Very Slightly or Not at All\",\"19\":\"4. Quite a Bit\",\"20\":\"2. A Little\",\"AC\":\"1. Choose this option\"}"
+#Where AC is the response to the attention check in this scale.
+
+#This function extract the responses:
+PANAS_noAC <- extractQs(responses =  D[D$category=="PANAS",]$response, lengthQ = 20, nSubj = length(listSubjID))
+
+
+PANAS_noAC<- cbind(D[D$category=="PANAS",]$subjID, PANAS_noAC)
+
+#Positive Affect Score Items: 1,3, 5, 9, 10, 12, 14, 16, 17, 19
+#Negative Affect Score Items: 2,4,6,7,8,11,13,15,18,20
+PA_NA <- matrix(nrow = length(listSubjID), ncol = 2)
+for (i in 1:nrow(PANAS_noAC)) {
+  PA_NA[i,1] <- sum(c(as.numeric(PANAS_noAC[i,1+2]), #1
+                      as.numeric(PANAS_noAC[i,3+2]), #3
+                      as.numeric(PANAS_noAC[i,5+2]), #5
+                      as.numeric(PANAS_noAC[i,9+2]), #9
+                      as.numeric(PANAS_noAC[i,10+2]), #10
+                      as.numeric(PANAS_noAC[i,12+2]), #12
+                      as.numeric(PANAS_noAC[i,14+2]), #14
+                      as.numeric(PANAS_noAC[i,16+2]), #16
+                      as.numeric(PANAS_noAC[i,17+2]), #17
+                      as.numeric(PANAS_noAC[i,19+2]) #19
+                    ))
+  PA_NA[i,2] <- sum(c(as.numeric(PANAS_noAC[i,2+2]), #2
+                      as.numeric(PANAS_noAC[i,4+2]), #4
+                      as.numeric(PANAS_noAC[i,6+2]), #6
+                      as.numeric(PANAS_noAC[i,7+2]), #7
+                      as.numeric(PANAS_noAC[i,8+2]), #8
+                      as.numeric(PANAS_noAC[i,11+2]), #11
+                      as.numeric(PANAS_noAC[i,13+2]), #13
+                      as.numeric(PANAS_noAC[i,15+2]), #15
+                      as.numeric(PANAS_noAC[i,18+2]), #18
+                      as.numeric(PANAS_noAC[i,20+2]) #20
+                    ))
+}
+PA_NA <- cbind(D[D$category=="PANAS",]$subjID, PA_NA)
+PA_NA <- as.data.frame(PA_NA)
+names(PA_NA)<-c("subjID", "PosAffect", "NegAffect")
+DChoiceReduced$PosAffect_tot <- NA
+
+for (subj in listSubjID) {
+  DChoiceReduced[DChoiceReduced$subjID== subj,]$PosAffect_tot <- PA_NA[PA_NA$subjID==subj,]$PosAffect  
+}
+ 
+
+#write.csv(PA_NA, "data/PANAS_Totals.csv")
+```
+
+### STAI-T: Anxiety/depression
+
+```{r load_STAI,echo=FALSE, message=FALSE, warning=FALSE}
+
+#State-Trait Anxiety Inventory for Adults, Form Y-2
+# Charles D. Spielberger(1968)
+
+#"{\"1\":\"3. Often\",\"2\":\"1. Almost never\",\"3\":\"4. Almost always\",\"4\":\"1. Almost never\",\"5\":\"1. Almost never\",\"6\":\"3. Often\",\"7\":\"4. Almost always\",\"8\":\"1. Almost never\",\"9\":\"1. Almost never\",\"10\":\"4. Almost always\",\"11\":\"1. Almost never\",\"12\":\"1. Almost never\",\"13\":\"3. Often\",\"14\":\"3. Often\",\"15\":\"1. Almost never\",\"16\":\"4. Almost always\",\"17\":\"1. Almost never\",\"18\":\"1. Almost never\",\"19\":\"3. Often\",\"20\":\"1. Almost never\",\"AC\":\"2. Somewhat\"}"
+
+STAI_T_noAC <- extractQs(responses =  D[D$category== "STAI2",]$response, lengthQ = 20, nSubj = length(listSubjID))
+
+STAI_T_noAC <- cbind(D[D$category=="STAI2",]$subjID, STAI_T_noAC)
+
+#reverse coded 
+# 1, 3, 6, 7, 10, 13, 14, 16, 19  
+# for these: 4 = 1, 3 = 2, 2 = 3, 1 = 4
+staiT <- matrix(nrow = length(listSubjID), ncol = 1)
+for (i in 1:nrow(staiT)) {
+  staiT[i,1]<- sum(c( (5 - as.numeric(STAI_T_noAC[i,1+2])), #1 R
+                      (as.numeric(STAI_T_noAC[i,2+2])), #2 
+                      (as.numeric(STAI_T_noAC[i,3+2])), #3
+                      (as.numeric(STAI_T_noAC[i,4+2])), #4
+                      (as.numeric(STAI_T_noAC[i,5+2])), #5
+                      (5 - as.numeric(STAI_T_noAC[i,6+2])), #6 R
+                      (5 - as.numeric(STAI_T_noAC[i,7+2])), #7 R
+                      (as.numeric(STAI_T_noAC[i,8+2])), #8 
+                      (as.numeric(STAI_T_noAC[i,9+2])), #9
+                      (5 - as.numeric(STAI_T_noAC[i,10+2])), #10 R
+                      (as.numeric(STAI_T_noAC[i,11+2])), #11 
+                      (as.numeric(STAI_T_noAC[i,12+2])), #12
+                      (5 - as.numeric(STAI_T_noAC[i,13+2])), #13 R
+                      (5 - as.numeric(STAI_T_noAC[i,14+2])), #14 R
+                      (as.numeric(STAI_T_noAC[i,15+2])), #15 
+                      (5 - as.numeric(STAI_T_noAC[i,16+2])), #16 R
+                      (as.numeric(STAI_T_noAC[i,17+2])), #17
+                      (as.numeric(STAI_T_noAC[i,18+2])), #18
+                      (5 - as.numeric(STAI_T_noAC[i,19+2])), #19 R
+                      (as.numeric(STAI_T_noAC[i,20+2])) #20 
+                      ))
+}
+
+
+staiT <- cbind(D[D$category=="STAI2",]$subjID, staiT)
+staiT <- as.data.frame(staiT)
+DChoiceReduced$STAIT_tot <- NA
+
+for (subj in listSubjID) {
+  DChoiceReduced[DChoiceReduced$subjID== subj,]$STAIT_tot <- staiT[staiT$V1==subj,]$V2
+}
+
+names(staiT)<-c("subjID", "staiT")
+#write.csv(staiT, "data/STAIT_Totals.csv")
+
+```
+
+### add demographic data
+
+```{r}
+demographics <-  read.delim("data/demographics/prolific_export_65ae5edd634d44c4a468fa6e.csv", header = T, sep = ",")
+
+
+DChoiceReduced$demograph_age <- NA
+DChoiceReduced$demograph_sex <- NA
+DChoiceReduced$demograph_nationality <- NA
+DChoiceReduced$demograph_approvals <- NA
+for (subj in listSubjID) {
+  if(length(demographics[demographics$Participant.id==subj,]$Age)==1){
+    DChoiceReduced[DChoiceReduced$subjID== subj,]$demograph_age <- demographics[demographics$Participant.id==subj,]$Age
+    DChoiceReduced[DChoiceReduced$subjID== subj,]$demograph_sex <- demographics[demographics$Participant.id==subj,]$Sex
+    DChoiceReduced[DChoiceReduced$subjID== subj,]$demograph_nationality <- demographics[demographics$Participant.id==subj,]$Nationality
+    DChoiceReduced[DChoiceReduced$subjID== subj,]$demograph_approvals <- demographics[demographics$Participant.id==subj,]$Total.approvals
+    
+  }
+}
+```
+
+## extract attention checks from all questionnaires
+
+
+```{r anxiety questionnaires_AC}
+STAI1_AC <- extractQs_AC(D[D$category=="STAI1",]$response, length(unique(D$subjID)), maxItem = 20, correctResponse = 2)
+STAI2_AC <- extractQs_AC(D[D$category=="STAI2",]$response, length(unique(D$subjID)), maxItem = 20, correctResponse = 2)
+PSWQ_AC <- extractQs_AC(D[D$category=="PSWQ",]$response, length(unique(D$subjID)), maxItem = 16, correctResponse = 2)
+GAD7_AC <- extractQs_AC(D[D$category=="GAD7",]$response, length(unique(D$subjID)), maxItem = 7, correctResponse = 3)
+```
+
+```{r motivation_questionnaires_AC}
+AMI_AC <- extractQs_AC(D[D$category=="AMI",]$response, length(unique(D$subjID)),maxItem = 18, correctResponse = 3)
+SHPS_AC <- extractQs_AC(D[D$category=="SHPS",]$response, length(unique(D$subjID)), maxItem = 14, correctResponse = 3)
+BIS_BAS_AC <- extractQs_AC(D[D$category=="BIS_BAS",]$response, length(unique(D$subjID)), maxItem = 24, correctResponse = 1)
+```
+
+```{r depression_questionnaires_AC}
+PHQ9_AC <- extractQs_AC(D[D$category=="PHQ9",]$response, length(unique(D$subjID)), maxItem = 9, correctResponse = 2)
+SDS_AC <- extractQs_AC(D[D$category=="SDS",]$response, length(unique(D$subjID)), maxItem = 20, correctResponse = 2)
+
+PANAS_AC <- extractQs_AC(D[D$category=="PANAS",]$response, length(unique(D$subjID)), maxItem = 20, correctResponse = 1)
+RAND36_AC <- extractQs_AC(D[D$category=="RAND36",]$response, length(unique(D$subjID)), maxItem = 36, correctResponse = 4)
+```
+
+```{r CESD_questionnaires_AC}
+CESD_AC <- extractQs_AC_CESD(D[D$category=="CESD",]$response, length(unique(D$subjID)), maxItem = 20, correctResponse = 2)
+```
+
+```{r IDSSR_questionnaires_AC}
+IDSSR_AC <- extractQs_AC_IDSSR(D[D$category=="IDSSR",]$response, length(unique(D$subjID)), maxItem = 30, correctResponse = 2)
+```
+
+```{r}
+full_Q_AC <- cbind(STAI1_AC, STAI2_AC, PSWQ_AC, GAD7_AC, PSWQ_AC,
+                   AMI_AC, BIS_BAS_AC, SHPS_AC,
+                   PHQ9_AC, SDS_AC, IDSSR_AC, CESD_AC,
+                   RAND36_AC, PANAS_AC)
+
+full_Q_AC_sum <- apply(full_Q_AC, 1, sum)
+
+full_Q_AC <- cbind(full_Q_AC,full_Q_AC_sum)
+```
+
+### Remove add failed AQ Q to data
+```{r}
+
+DChoiceReduced$failed_AC_Q <- 0
+
+for (subj in 1:length(listSubjID)) {
+  DChoiceReduced[DChoiceReduced$subjID== listSubjID[subj], ]$failed_AC_Q <- full_Q_AC_sum[subj]
+}
+
+```
+
+```{r}
+write.csv(full_Q_AC, "data/fail_Q_AC1.csv")
+```
+
+
+# Load Follow-up
+```{r load raw data}
+NrowsCorrData <- 966
+fileOfData <- "data/dataRawFU/"
+errorFiles <- "data/dataRawFU/errorData/"
+listDataFiles <- list.files(path = paste0(fileOfData), pattern = "priors")
+mainDir <- getwd()
+subDir <- errorFiles
+
+ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+
+D2<- NULL
+errorData <- NULL
+temp <- NULL
+for (iFiles in listDataFiles) {
+  temp <- read.delim(paste0(fileOfData,iFiles), header = T, sep = ",")
+  if (nrow(temp)< NrowsCorrData | nrow(temp)> NrowsCorrData+10*5){
+    file.copy(from = paste0(fileOfData,iFiles), to = paste0(errorFiles,iFiles))
+    # 14 files are moved, 14 with incomplete data, 0 with more than 10 missed trials
+  }else {
+    if (sum(is.na(temp$trial_index))>0) {
+       file.copy(from = paste0(fileOfData,iFiles), to = paste0(errorFiles,iFiles))
+      # none removed
+    }else{
+      D2 <- rbind(D2,temp)
+    }
+  }
+  temp <- NULL
+}
+
+listSubjID2 <- unique(D2$subjID)
+```
+
+```{r}
+
+D2 <- D2[!is.na(D2$subjID), ]
+listSubjID2 <- unique(D2$subjID)
+
+D2$subjID <- substr(D2$subjID, 1, 24)
+# no participant removed for now
+
+for (i in listSubjID2) {
+  if (nchar(i)!=24){
+    print(i)
+    D2 <- D2[D2$subjID!=i ,]
+  }
+}
+# only participant with to wrong length had added "@email.prolific.com", this was removed but not participant
+
+listSubjID2 <- unique(D2$subjID)
+
+
+#participant with doubled data
+
+# Remove second part of the data with double data
+D2_issue <- D2[D2$subjID=="PROLIFIC_ID_ANONOMIZED", ]
+D2 <- D2[D2$subjID!="PROLIFIC_ID_ANONOMIZED", ]#participant with doubled data removed
+D2_issue <- D2_issue[!duplicated(D2_issue$trial_index),] # remove duplicate trials
+# remove second oMSTResults
+D2_issue <- D2_issue[1:D2_issue[D2_issue$category=="oMSTResult" ,]$trial_index[1]+2,]
+
+D2<- rbind(D2, D2_issue)
+
+
+listSubjID2 <- unique(D2$subjID)
+```
+
+```{r remove participants that failed attention checks}
+subjMissedCatchTrial2 <- NULL
+maxMissedAttentionChecks <- 2
+
+D2 <- D2[!is.na(D2$trial_type), ]
+
+for (i in listSubjID2) {
+  if (maxMissedAttentionChecks<sum(D2[D2$category=="catchTrial" & D2$subjID==i, ]$response == "null")){
+    subjMissedCatchTrial2 <- c(subjMissedCatchTrial2, i)
+  }
+}
+
+if (length(subjMissedCatchTrial2)>0){
+  for (i in subjMissedCatchTrial2) {
+    D2 <- D2[D2$subjID!=i ,]
+  }
+}
+
+listSubjID2 <- unique(D2$subjID)
+
+length(subjMissedCatchTrial2)
+
+```
+
+
+## extract data for analysis
+
+```{r remove unused collumns}
+DChoiceFU <- D2[D2$category=="choice" ,]
+
+DChoiceFU$act <- as.numeric(DChoiceFU$act)
+
+DChoiceReducedFU <- DChoiceFU[,c(5:6,8:10,15:(ncol(DChoiceFU)-7))]
+```
+
+### PANAS: Positive Affect
+
+```{r load_PANAS}
+PANAS_noAC <- extractQs(responses =  D2[D2$category=="PANAS",]$response, lengthQ = 20, nSubj = length(listSubjID2))
+
+PANAS_noAC<- cbind(D2[D2$category=="PANAS",]$subjID, PANAS_noAC)
+#Positive Affect Score Items: 1,3, 5, 9, 10, 12, 14, 16, 17, 19
+#Negative Affect Score Items: 2,4,6,7,8,11,13,15,18,20
+PA_NA <- matrix(nrow = length(listSubjID2), ncol = 2)
+for (i in 1:nrow(PANAS_noAC)) {
+  PA_NA[i,1] <- sum(c(as.numeric(PANAS_noAC[i,1+2]), #1
+                      as.numeric(PANAS_noAC[i,3+2]), #3
+                      as.numeric(PANAS_noAC[i,5+2]), #5
+                      as.numeric(PANAS_noAC[i,9+2]), #9
+                      as.numeric(PANAS_noAC[i,10+2]), #10
+                      as.numeric(PANAS_noAC[i,12+2]), #12
+                      as.numeric(PANAS_noAC[i,14+2]), #14
+                      as.numeric(PANAS_noAC[i,16+2]), #16
+                      as.numeric(PANAS_noAC[i,17+2]), #17
+                      as.numeric(PANAS_noAC[i,19+2]) #19
+                    ))
+  PA_NA[i,2] <- sum(c(as.numeric(PANAS_noAC[i,2+2]), #2
+                      as.numeric(PANAS_noAC[i,4+2]), #4
+                      as.numeric(PANAS_noAC[i,6+2]), #6
+                      as.numeric(PANAS_noAC[i,7+2]), #7
+                      as.numeric(PANAS_noAC[i,8+2]), #8
+                      as.numeric(PANAS_noAC[i,11+2]), #11
+                      as.numeric(PANAS_noAC[i,13+2]), #13
+                      as.numeric(PANAS_noAC[i,15+2]), #15
+                      as.numeric(PANAS_noAC[i,18+2]), #18
+                      as.numeric(PANAS_noAC[i,20+2]) #20
+                    ))
+}
+PA_NA <- cbind(D2[D2$category=="PANAS",]$subjID, PA_NA)
+PA_NA <- as.data.frame(PA_NA)
+names(PA_NA)<-c("subjID", "PosAffect", "NegAffect")
+DChoiceReducedFU$PosAffect_tot <- NA
+
+for (subj in listSubjID2) {
+  DChoiceReducedFU[DChoiceReducedFU$subjID== subj,]$PosAffect_tot <- PA_NA[PA_NA$subjID==subj,]$PosAffect  
+}
+
+#write.csv(PA_NA, "data/PANAS_Totals_FU.csv")
+```
+
+### STAI-T: Anxiety/depression
+
+```{r load_STAI,echo=FALSE, message=FALSE, warning=FALSE}
+
+#State-Trait Anxiety Inventory for Adults, Form Y-2
+# Charles D. Spielberger(1968)
+
+# the data structure is recorded as follows:
+#
+
+STAI_T_noAC <- extractQs(responses =  D2[D2$category== "STAI2",]$response, lengthQ = 20, nSubj = length(listSubjID2))
+
+STAI_T_noAC <- cbind(D2[D2$category=="STAI2",]$subjID, STAI_T_noAC)
+
+#reverse coded 
+# 1, 3, 6, 7, 10, 13, 14, 16, 19  
+# for these: 4 = 1, 3 = 2, 2 = 3, 1 = 4
+staiT <- matrix(nrow = length(listSubjID2), ncol = 1)
+for (i in 1:nrow(staiT)) {
+  staiT[i,1]<- sum(c( (5 - as.numeric(STAI_T_noAC[i,1+2])), #1 R
+                      (as.numeric(STAI_T_noAC[i,2+2])), #2 
+                      (as.numeric(STAI_T_noAC[i,3+2])), #3
+                      (as.numeric(STAI_T_noAC[i,4+2])), #4
+                      (as.numeric(STAI_T_noAC[i,5+2])), #5
+                      (5 - as.numeric(STAI_T_noAC[i,6+2])), #6 R
+                      (5 - as.numeric(STAI_T_noAC[i,7+2])), #7 R
+                      (as.numeric(STAI_T_noAC[i,8+2])), #8 
+                      (as.numeric(STAI_T_noAC[i,9+2])), #9
+                      (5 - as.numeric(STAI_T_noAC[i,10+2])), #10 R
+                      (as.numeric(STAI_T_noAC[i,11+2])), #11 
+                      (as.numeric(STAI_T_noAC[i,12+2])), #12
+                      (5 - as.numeric(STAI_T_noAC[i,13+2])), #13 R
+                      (5 - as.numeric(STAI_T_noAC[i,14+2])), #14 R
+                      (as.numeric(STAI_T_noAC[i,15+2])), #15 
+                      (5 - as.numeric(STAI_T_noAC[i,16+2])), #16 R
+                      (as.numeric(STAI_T_noAC[i,17+2])), #17
+                      (as.numeric(STAI_T_noAC[i,18+2])), #18
+                      (5 - as.numeric(STAI_T_noAC[i,19+2])), #19 R
+                      (as.numeric(STAI_T_noAC[i,20+2])) #20 
+                      ))
+}
+
+
+staiT <- cbind(D2[D2$category=="STAI2",]$subjID, staiT)
+staiT <- as.data.frame(staiT)
+DChoiceReducedFU$STAIT_tot <- NA
+
+for (subj in listSubjID2) {
+  DChoiceReducedFU[DChoiceReducedFU$subjID== subj,]$STAIT_tot <- staiT[staiT$V1==subj,]$V2
+}
+
+names(staiT)<-c("subjID", "staiT")
+#write.csv(staiT, "data/STAIT_Totals_FU.csv")
+```
+
+
+### add demographic data
+
+```{r}
+demographicsFU <-  read.delim("data/demographics/FU/prolific_export_65c3914e29cea5a205f3d067.csv", header = T, sep = ",")
+
+DChoiceReducedFU$demograph_dateDif <- NA
+
+for (subj in listSubjID2) {
+ DChoiceReducedFU[DChoiceReducedFU$subjID== subj,]$demograph_dateDif <- (as.Date(demographicsFU[demographicsFU$Participant.id==subj,]$Completed.at))- (as.Date(demographics[demographics$Participant.id==subj,]$Completed.at))
+}
+
+max(DChoiceReducedFU[DChoiceReducedFU$trial==1 & DChoiceReducedFU$task=="robber", ]$demograph_dateDif)
+min(DChoiceReducedFU[DChoiceReducedFU$trial==1 & DChoiceReducedFU$task=="robber", ]$demograph_dateDif)
+mean(DChoiceReducedFU[DChoiceReducedFU$trial==1 & DChoiceReducedFU$task=="robber", ]$demograph_dateDif)
+sd(DChoiceReducedFU[DChoiceReducedFU$trial==1 & DChoiceReducedFU$task=="robber", ]$demograph_dateDif)
+
+DChoiceReducedFU$demograph_age <- NA
+DChoiceReducedFU$demograph_sex <- NA
+DChoiceReducedFU$demograph_nationality <- NA
+
+for (subj in listSubjID2) {
+  if(length(demographics[demographics$Participant.id==subj,]$Age)==1){
+    DChoiceReducedFU[DChoiceReducedFU$subjID== subj,]$demograph_age <- demographics[demographics$Participant.id==subj,]$Age
+    DChoiceReducedFU[DChoiceReducedFU$subjID== subj,]$demograph_sex <- demographics[demographics$Participant.id==subj,]$Sex
+    DChoiceReducedFU[DChoiceReducedFU$subjID== subj,]$demograph_nationality <- demographics[demographics$Participant.id==subj,]$Nationality  
+  }
+  
+}
+```
+
+## extract attention checks from all questionnaires
+
+
+```{r anxiety_questionnaires_FU}
+STAI1_AC2 <- extractQs_AC(D2[D2$category=="STAI1",]$response, length(unique(D2$subjID)), maxItem = 20, correctResponse = 2)
+STAI2_AC2 <- extractQs_AC(D2[D2$category=="STAI2",]$response, length(unique(D2$subjID)), maxItem = 20, correctResponse = 2)
+PSWQ_AC2 <- extractQs_AC(D2[D2$category=="PSWQ",]$response, length(unique(D2$subjID)), maxItem = 16, correctResponse = 2)
+GAD7_AC2 <- extractQs_AC(D2[D2$category=="GAD7",]$response, length(unique(D2$subjID)), maxItem = 7, correctResponse = 3)
+```
+
+```{r motivation_questionnaires_FU}
+AMI_AC2 <- extractQs_AC(D2[D2$category=="AMI",]$response, length(unique(D2$subjID)),maxItem = 18, correctResponse = 3)
+SHPS_AC2 <- extractQs_AC(D2[D2$category=="SHPS",]$response, length(unique(D2$subjID)), maxItem = 14, correctResponse = 3)
+BIS_BAS_AC2 <- extractQs_AC(D2[D2$category=="BIS_BAS",]$response, length(unique(D2$subjID)), maxItem = 24, correctResponse = 1)
+```
+
+```{r depression_questionnaires_FU}
+PHQ9_AC2 <- extractQs_AC(D2[D2$category=="PHQ9",]$response, length(unique(D2$subjID)), maxItem = 9, correctResponse = 2)
+SDS_AC2 <- extractQs_AC(D2[D2$category=="SDS",]$response, length(unique(D2$subjID)), maxItem = 20, correctResponse = 2)
+
+PANAS_AC2 <- extractQs_AC(D2[D2$category=="PANAS",]$response, length(unique(D2$subjID)), maxItem = 20, correctResponse = 1)
+RAND36_AC2 <- extractQs_AC(D2[D2$category=="RAND36",]$response, length(unique(D2$subjID)), maxItem = 36, correctResponse = 4)
+```
+
+```{r CESD_questionnaires_FU}
+CESD_AC2 <- extractQs_AC_CESD(D2[D2$category=="CESD",]$response, length(unique(D2$subjID)), maxItem = 20, correctResponse = 2)
+```
+
+```{r IDSSR_questionnaires_FU}
+IDSSR_AC2 <- extractQs_AC_IDSSR(D2[D2$category=="IDSSR",]$response, length(unique(D2$subjID)), maxItem = 30, correctResponse = 2)
+```
+
+```{r}
+full_Q_AC2 <- cbind(STAI1_AC2, STAI2_AC2, PSWQ_AC2, GAD7_AC2, PSWQ_AC2,
+                   AMI_AC2, BIS_BAS_AC2, SHPS_AC2,
+                   PHQ9_AC2, SDS_AC2, IDSSR_AC2, CESD_AC2,
+                   RAND36_AC2, PANAS_AC2)
+
+full_Q_AC_sum2 <- apply(full_Q_AC2, 1, sum)
+
+full_Q_AC2 <- cbind(full_Q_AC2,full_Q_AC_sum2)
+```
+
+### Remove add failed AQ Q to data
+```{r}
+DChoiceReducedFU$failed_AC_Q <- 0
+
+for (subj in 1:length(listSubjID2)) {
+  DChoiceReducedFU[DChoiceReducedFU$subjID== listSubjID2[subj], ]$failed_AC_Q <- full_Q_AC_sum2[subj]
+}
+
+```
+
+```{r}
+write.csv(full_Q_AC2, "data/fail_Q_AC_FU.csv")
+```
+
+
+
+# Write extracted data
+
+### Remove prolific ID day 1
+
+```{r}
+DChoiceReduced <- cbind("subjID_anon" = rep(0,nrow(DChoiceReduced)), DChoiceReduced)
+
+for (subj in 1:(length(listSubjID))) {
+  DChoiceReduced[DChoiceReduced$subjID== listSubjID[subj],]$subjID_anon <- subj
+}
+
+DChoiceReduced_anon <- DChoiceReduced[,c(1,3:(ncol(DChoiceReduced)))]
+
+write.csv(DChoiceReduced_anon, file = "data/extractedData.csv", row.names = FALSE)
+```
+
+
+### Remove prolific ID, FU
+
+```{r}
+DChoiceReducedFU <- cbind("subjID_anon" = rep(0,nrow(DChoiceReducedFU)), DChoiceReducedFU)
+
+for (subj in 1:(length(listSubjID))) {
+  if(length(DChoiceReducedFU[DChoiceReducedFU$subjID== listSubjID[subj],]$subjID_anon)>1){
+    DChoiceReducedFU[DChoiceReducedFU$subjID== listSubjID[subj],]$subjID_anon <- subj
+  }
+}
+
+DChoiceReducedFU_anon <- DChoiceReducedFU[,c(1,3:(ncol(DChoiceReducedFU)))]
+
+write.csv(DChoiceReducedFU_anon, file = "data/extractedData_FU.csv", row.names = FALSE)
+```
+
+
+
