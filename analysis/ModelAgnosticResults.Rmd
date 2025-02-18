@@ -1,0 +1,839 @@
+---
+title: "Regression Models"
+author: "Tobias Granwald"
+date: "2025-02-11"
+output: html_document
+---
+
+# Setup
+
+```{r load packages, echo=FALSE, message=FALSE, warning=FALSE}
+library("brms")
+library("bayesplot")
+library("ggplot2")
+```
+
+## Load data
+
+```{r load_data, echo=FALSE, message=FALSE,warning=FALSE}
+D <- read.delim("data/extractedData.csv", header = TRUE, sep = ",")
+```
+
+```{r sort_choice_data,echo=FALSE, message=FALSE, warning=FALSE}
+DChoice <- D[D$response!="null", ]
+
+DChoice$act <- as.numeric(DChoice$act)
+
+
+DChoiceRobber <- DChoice[DChoice$task == "robber" , ]
+DChoiceRobber1 <- DChoiceRobber[DChoiceRobber$trial<60, ]
+DChoiceRobber2 <- DChoiceRobber[DChoiceRobber$trial>59, ]
+
+DChoiceFactory <- DChoice[DChoice$task == "factory" , ]
+DChoiceFactory1 <- DChoiceFactory[DChoiceFactory$trial<60, ]
+DChoiceFactory2 <- DChoiceFactory[DChoiceFactory$trial>59, ]
+
+listSubjID <- unique(DChoice$subjID_anon)
+```
+
+## Setup models
+
+```{r load_model_parameters, echo=FALSE, message=FALSE, warning=FALSE,}
+iterations <- 4500
+warmup <- 1000
+cores <- parallel::detectCores()
+chains <- 7 #cores -1 in on the computer that ran the analysis
+seed <- 1337
+
+subDir <- "brmsFiles/"
+subDir2 <- "figures/"
+mainDir <- getwd()
+
+ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE) #returns "FALSE" if the folder already exists
+ifelse(!dir.exists(file.path(mainDir, subDir2)), dir.create(file.path(mainDir, subDir2)), FALSE) #returns "FALSE" if the folder already exists
+```
+
+### Set priors
+```{r set priors}
+#Model 1
+pFit1 <- c(set_prior("normal(0,1.5)", class = "Intercept"),
+           set_prior("normal(0,1)", class = "b"),
+           set_prior("normal(0,1)", class = "sd"),
+           set_prior("lkj(3)", class = "cor"))
+#Model 2
+pFit2 <- c(set_prior("normal(0,1.5)", class = "Intercept"),
+           set_prior("normal(0,1)", class = "b"),
+           set_prior("normal(0,1)", class = "sd"),
+           set_prior("lkj(3)", class = "cor"))
+```
+
+
+# Robber task, block 1
+
+## Model 1: success last
+
+```{r fit_M1_robber_block1, echo=FALSE, message=T, warning=T, eval=FALSE}
+# To ensure that the model doesn't need to be run every time the file is knitted: eval = FALSE and the results are saved for each regression model.
+
+#set up success on the last trial, 1 if success on last trial, 0 if loss or passive choice.
+DChoiceRobber1$successLast <- 0
+DChoiceRobber1$successLast[2:length(DChoiceRobber1$successLast)] <- DChoiceRobber1$success[1:(length(DChoiceRobber1$success)-1)]
+
+DChoiceRobber1$offerscost <- DChoiceRobber1$offers - DChoiceRobber1$cost 
+DChoiceRobber1$stimNo <- as.factor(DChoiceRobber1$stimNo)
+DChoiceRobber1$subjID_anon <- as.factor(DChoiceRobber1$subjID_anon)
+
+R1fit1 <- brm(act ~ successLast * offerscost +
+                (successLast * offerscost|subjID_anon) +
+                (successLast * offerscost|stimNo),
+            data = DChoiceRobber1 , 
+            family = bernoulli(link = logit),
+            prior = pFit1,
+            cores = cores-1,
+            chains = chains,
+            sample_prior = "yes",
+            iter = iterations,
+            warmup = warmup,
+            seed = seed)
+
+save(R1fit1, file = "brmsFiles/R1fit1.rda")
+```
+
+
+```{r load_M1_robber_block1, echo=FALSE}
+load("brmsFiles/R1fit1.rda")
+
+R1fit1
+
+H1_R1fit1_success <- hypothesis(R1fit1, "successLast = 0", seed = seed)
+H1_R1fit1_offerCost <- hypothesis(R1fit1, "offerscost = 0", seed = seed)
+H1_R1fit1_successXofferCost <- hypothesis(R1fit1, "successLast:offerscost = 0", seed = seed)
+
+pp_check(R1fit1)+
+  ggtitle("Robber task, Block 1", subtitle = "Model 1") +
+  xlab("P(active)")
+
+pp_check(R1fit1, type = "bars", nsamples = 1000) + 
+  ggtitle("Robber Task, Block 1", subtitle = "Model 1")
+```
+
+### trace plot
+```{r traceplot_robber1_M1}
+my_labeller_one <- as_labeller(x = c(
+    'b_Intercept' = 'Intercept',
+    'b_successLast' = 'Success~Last',
+    'b_offerscost' = 'Offer - Cost',
+    'b_successLast:offerscost' = 'Success~Last~x~Offer - Cost'
+  ), 
+  default = label_parsed)
+
+png(filename = "figures/FigS1_tracePlot_R1fit1.png", 
+    width = ((700*2))/3, height = 1400/3)
+
+mcmc_trace(R1fit1, 
+           pars = c("b_Intercept",
+                    "b_successLast", 
+                    "b_offerscost",
+                    "b_successLast:offerscost"),
+           facet_args = list(nrow = 2, labeller = my_labeller_one),
+           window = c(0, iterations-warmup))
+dev.off()
+```
+
+
+## Model 2: probwin
+
+```{r fit_M2_robber_block1, echo=FALSE, message=T, warning=T, eval=FALSE}
+
+DChoiceRobber1$trialStim <- 0
+for (i in 1:length(listSubjID)) {
+  for (j in 1:length(unique(DChoiceRobber1$probWin))) {
+      DChoiceRobber1[DChoiceRobber1$subjID_anon==listSubjID[i] & DChoiceRobber1$probWin==unique(DChoiceRobber1$probWin)[j], ]$trialStim <- 
+    c(1:length(DChoiceRobber1[DChoiceRobber1$subjID_anon==listSubjID[i] & DChoiceRobber1$probWin==unique(DChoiceRobber1$probWin)[j], ]$trialStim))
+  }
+
+}
+
+R1fit2 <- brm(act ~ trialStim * probWin + (trialStim * probWin|subjID_anon),
+              data = DChoiceRobber1 , 
+              family = bernoulli(link = logit),
+              prior = pFit1,
+              cores = cores-1,
+              chains = chains,
+              sample_prior = "yes",
+              iter = iterations,
+              warmup = warmup,
+              seed = seed)
+
+save(R1fit2, file = "brmsFiles/R1fit2.rda")
+```
+
+
+```{r load_M2_robber_block1, echo=FALSE}
+load("brmsFiles/R1fit2.rda")
+R1fit2
+H1_R1fit2_trialStim <- hypothesis(R1fit2, "trialStim  =0", seed = seed)
+H1_R1fit2_probWin <- hypothesis(R1fit2, "probWin = 0", seed = seed)
+H1_R1fit2_trialStimXprobWin <- hypothesis(R1fit2, "trialStim:probWin = 0", seed = seed)
+
+pp_check(R1fit2)+
+  ggtitle("Robber task, Block 1", subtitle = "Model 2") +
+  xlab("P(active)")
+
+pp_check(R1fit2, type = "bars", nsamples = 1000) + 
+  ggtitle("Robber Task, Block 1", subtitle = "Model 2")
+
+```
+
+### trace plot
+```{r traceplot_robber1_M2}
+my_labeller_one <- as_labeller(x = c(
+    'b_Intercept' = 'Intercept',
+    'b_trialStim' = 'Trial',
+    'b_probWin' = 'Success~Prob',
+    'b_trialStim:probWin' = 'Trial~x~Success~Prob'
+  ), 
+  default = label_parsed)
+
+png(filename = "figures/FigS5_tracePlot_R1fit2.png", 
+    width = ((700*2))/3, height = 1400/3)
+
+mcmc_trace(R1fit2, 
+           pars = c("b_Intercept",
+                    "b_trialStim", 
+                    "b_probWin",
+                    "b_trialStim:probWin"),
+           facet_args = list(nrow = 2, labeller = my_labeller_one),
+           window = c(0, iterations-warmup))
+dev.off()
+```
+
+# Robber task, block 2
+
+## Model 1: success last
+
+```{r fit_M1_robber_block2, echo=FALSE, message=T, warning=T, eval=FALSE}
+DChoiceRobber2$successLast <- 0
+DChoiceRobber2$successLast[2:length(DChoiceRobber2$successLast)] <- DChoiceRobber2$success[1:(length(DChoiceRobber2$success)-1)]
+
+DChoiceRobber2$offerscost <-DChoiceRobber2$offers - DChoiceRobber2$cost 
+DChoiceRobber2$stimNo <- as.factor(DChoiceRobber1$stimNo)
+DChoiceRobber2$subjID_anon <- as.factor(DChoiceRobber1$subjID_anon)
+
+R2fit1 <- brm(act ~ successLast * offerscost +
+                (successLast * offerscost|subjID_anon) +
+                (successLast * offerscost|stimNo),
+            data = DChoiceRobber2 , 
+            family = bernoulli(link = logit),
+            prior = pFit1,
+            cores = cores-1,
+            chains = chains,
+            sample_prior = "yes",
+            iter = iterations,
+            warmup = warmup,
+            seed = seed)
+
+save(R2fit1, file = "brmsFiles/R2fit1.rda")
+```
+
+
+```{r load_M1_robber_block2, echo=FALSE, message=FALSE}
+load("brmsFiles/R2fit1.rda")
+R2fit1
+H1_R2fit1_success <- hypothesis(R2fit1, "successLast = 0", seed = seed)
+H1_R2fit1_offerCost <- hypothesis(R2fit1, "offerscost = 0", seed = seed)
+H1_R2fit1_successXofferCost <- hypothesis(R2fit1, "successLast:offerscost = 0",
+                                          seed = seed)
+
+pp_check(R2fit1)+ ggtitle("Robber Task, Block 2", subtitle = "Model 1") +
+  xlab("P(active)")
+
+pp_check(R2fit1, type = "bars", nsamples = 1000) + 
+  ggtitle("Robber Task, Block 2", subtitle = "Model 1")
+```
+
+### trace plot
+```{r traceplot_robber2_M1}
+my_labeller_one <- as_labeller(x = c(
+    'b_Intercept' = 'Intercept',
+    'b_successLast' = 'Success~Last',
+    'b_offerscost' = 'Offer - Cost',
+    'b_successLast:offerscost' = 'Success~Last~x~Offer - Cost'
+  ), 
+  default = label_parsed)
+
+png(filename = "figures/FigS2_tracePlot_R2fit1.png", 
+    width = ((700*2))/3, height = 1400/3)
+
+mcmc_trace(R2fit1, 
+           pars = c("b_Intercept",
+                    "b_successLast", 
+                    "b_offerscost",
+                    "b_successLast:offerscost"),
+           facet_args = list(nrow = 2, labeller = my_labeller_one),
+           window = c(0, iterations-warmup))
+dev.off()
+```
+
+## Model 2: probwin
+
+```{r fit_M2_robber_block2, echo=FALSE, message=T, warning=T, eval=FALSE}
+DChoiceRobber2$trialStim <- 0
+for (i in 1:length(listSubjID)) {
+  for (j in 1:length(unique(DChoiceRobber1$probWin))) {
+      DChoiceRobber2[DChoiceRobber2$subjID_anon==listSubjID[i] & DChoiceRobber2$probWin==unique(DChoiceRobber2$probWin)[j], ]$trialStim <- 
+    c(1:length(DChoiceRobber2[DChoiceRobber2$subjID_anon==listSubjID[i] & DChoiceRobber2$probWin==unique(DChoiceRobber2$probWin)[j], ]$trialStim))
+  }
+
+}
+
+R2fit2 <- brm(act ~ trialStim * probWin + (trialStim * probWin|subjID_anon),
+              data = DChoiceRobber2 , 
+              family = bernoulli(link = logit),
+              prior = pFit2,
+              cores = cores-1,
+              chains = chains,
+              sample_prior = "yes",
+              iter = iterations,
+              warmup = warmup,
+              control = list(adapt_delta = 0.98),
+              seed = seed)
+
+save(R2fit2, file = "brmsFiles/R2fit2.rda")
+```
+
+
+```{r load_M2_robber_block2, echo=FALSE, message=FALSE}
+load("brmsFiles/R2fit2.rda")
+
+R2fit2
+H1_R2fit2_trialStim <- hypothesis(R2fit2, "trialStim = 0", seed = seed)
+H1_R2fit2_probWin <- hypothesis(R2fit2, "probWin = 0", seed = seed)
+H1_R2fit2_trialStimXprobWin<- hypothesis(R2fit2, "trialStim:probWin = 0", seed = seed)
+
+pp_check(R2fit2) +
+  ggtitle("Robber Task, Block 2", subtitle = "Model 2") + 
+  xlab("P(active)")
+
+pp_check(R2fit2, type = "bars", nsamples = 1000) +
+  ggtitle("Robber Task, Block 2", subtitle = "Model 2")
+```
+At delta = 0.8:
+"There were 390 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help"
+
+At delta = 0.9:
+"There were 101 divergent transitions after warmup. Increasing adapt_delta above 0.9 may help"
+
+At delta = 0.95:
+"There were 89 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help" 
+
+Delta set at 0.98.
+
+
+### trace plot
+```{r traceplot_robber2_M2}
+my_labeller_one <- as_labeller(x = c(
+    'b_Intercept' = 'Intercept',
+    'b_trialStim' = 'Trial',
+    'b_probWin' = 'Success~Prob',
+    'b_trialStim:probWin' = 'Trial~x~Success~Prob'
+  ), 
+  default = label_parsed)
+
+
+png(filename = "figures/FigS6_tracePlot_R2fit2.png", 
+    width = ((700*2))/3, height = 1400/3)
+
+mcmc_trace(R2fit2, 
+           pars = c("b_Intercept",
+                    "b_trialStim", 
+                    "b_probWin",
+                    "b_trialStim:probWin"),
+           facet_args = list(nrow = 2, labeller = my_labeller_one),
+           window = c(0, iterations-warmup))
+dev.off()
+```
+
+
+# Factory task, block 1
+
+## Model 1: success last
+
+```{r fit_M1_factory_block1, echo=FALSE, message=T, warning=T, eval=FALSE}
+# Set up the parameters used in the model 
+DChoiceFactory1$successLast <- 0
+DChoiceFactory1$successLast[2:length(DChoiceFactory1$successLast)] <- DChoiceFactory1$success[1:(length(DChoiceFactory1$success)-1)]
+
+DChoiceFactory1$offerscost <-DChoiceFactory1$offers - DChoiceFactory1$cost 
+DChoiceFactory1$stimNo <- as.factor(DChoiceFactory1$stimNo)
+DChoiceFactory1$subjID_anon <- as.factor(DChoiceFactory1$subjID_anon)
+
+F1fit1 <-   brm(act ~ successLast * offerscost +
+                  (successLast * offerscost|subjID_anon) +
+                  (successLast * offerscost|stimNo),
+            data = DChoiceFactory1 , 
+            family = bernoulli(link = logit),
+            prior = pFit1,
+            cores = cores-1,
+            chains = chains,
+            sample_prior = "yes",
+            iter = iterations,
+            warmup = warmup,
+            seed = seed)
+
+save(F1fit1, file = "brmsFiles/F1fit1.rda")
+```
+
+
+```{r load_M1_factory_block1, echo=FALSE}
+load("brmsFiles/F1fit1.rda")
+F1fit1
+H1_F1fit1_success <- hypothesis(F1fit1, "successLast = 0", seed = seed)
+H1_F1fit1_offerCost <- hypothesis(F1fit1, "offerscost = 0", seed = seed)
+H1_F1fit1_successXofferCost <- hypothesis(F1fit1, "successLast:offerscost = 0", 
+                                          seed = seed)
+
+pp_check(F1fit1) +
+  ggtitle("Factory Task, Block 1", subtitle = "Model 1") +
+  xlab("P(active)")
+pp_check(F1fit1, type = "bars", nsamples = 1000) + 
+  ggtitle("Factory Task, Block 1", subtitle = "Model 1")
+
+```
+
+### trace plot
+```{r traceplot_factory1_M1}
+my_labeller_one <- as_labeller(x = c(
+    'b_Intercept' = 'Intercept',
+    'b_successLast' = 'Success~Last',
+    'b_offerscost' = 'Offer - Cost',
+    'b_successLast:offerscost' = 'Success~Last~x~Offer - Cost'
+  ), 
+  default = label_parsed)
+
+png(filename = "figures/FigS3_tracePlot_F1fit1.png", 
+    width = ((700*2))/3, height = 1400/3)
+
+mcmc_trace(F1fit1, 
+           pars = c("b_Intercept",
+                    "b_successLast", 
+                    "b_offerscost",
+                    "b_successLast:offerscost"),
+           facet_args = list(nrow = 2, labeller = my_labeller_one),
+           window = c(0, iterations-warmup))
+dev.off()
+```
+
+## Model 2: probwin
+
+```{r fit_M2_factory_block1, echo=FALSE, message=T, warning=T, eval=FALSE}
+#Set up the 
+DChoiceFactory1$trialStim <- 0
+for (i in 1:length(listSubjID)) {
+  for (j in 1:length(unique(DChoiceFactory1$probWin))) {
+      DChoiceFactory1[DChoiceFactory1$subjID_anon==listSubjID[i] & DChoiceFactory1$probWin==unique(DChoiceFactory1$probWin)[j], ]$trialStim <- 
+    c(1:length(DChoiceFactory1[DChoiceFactory1$subjID_anon==listSubjID[i] & DChoiceFactory1$probWin==unique(DChoiceFactory1$probWin)[j], ]$trialStim))
+  }
+
+}
+
+F1fit2 <- brm(act ~ trialStim * probWin + (trialStim * probWin|subjID_anon),
+              data = DChoiceFactory1, 
+              family = bernoulli(link = logit),
+              prior = pFit2,
+              cores = cores-1,
+              chains = chains,
+              sample_prior = "yes",
+              iter = iterations,
+              warmup = warmup,
+              control = list(adapt_delta = 0.95),
+              seed = seed)
+
+save(F1fit2, file = "brmsFiles/F1fit2.rda")
+```
+
+
+```{r load_M2_factory_block1, echo=FALSE,}
+load("brmsFiles/F1fit2.rda")
+
+F1fit2
+H1_F1fit2_trialStim <- hypothesis(F1fit2, "trialStim = 0", seed = seed)
+H1_F1fit2_probWin <- hypothesis(F1fit2, "probWin = 0", seed = seed)
+H1_F1fit2_trialStimXprobWin <- hypothesis(F1fit2, "trialStim:probWin = 0", 
+                                          seed = seed)
+pp_check(F1fit2) +
+  ggtitle("Factory Task, Block 1", subtitle = "Model 2") + 
+  xlab("P(active)")
+
+pp_check(F1fit2, type = "bars", nsamples = 1000) +
+  ggtitle("Factory Task, Block 1", subtitle = "Model 2")
+```
+At delta = 0.8:
+"There were 114 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help"
+
+At delta = 0.9:
+"There were 58 divergent transitions after warmup. Increasing adapt_delta above 0.9 may help"
+
+Delta set at 0.95, no divergent transitions.
+
+### trace plot
+```{r traceplot_factory1_M2}
+my_labeller_one <- as_labeller(x = c(
+    'b_Intercept' = 'Intercept',
+    'b_trialStim' = 'Trial',
+    'b_probWin' = 'Success~Prob',
+    'b_trialStim:probWin' = 'Trial~x~Success~Prob'
+  ), 
+  default = label_parsed)
+
+png(filename = "figures/FigS7_tracePlot_F1fit2.png", 
+    width = ((700*2))/3, height = 1400/3)
+
+mcmc_trace(F1fit2, 
+           pars = c("b_Intercept",
+                    "b_trialStim", 
+                    "b_probWin",
+                    "b_trialStim:probWin"),
+           facet_args = list(nrow = 2, labeller = my_labeller_one),
+           window = c(0, iterations-warmup))
+
+dev.off()
+```
+
+
+# Factory task, block 2
+
+## Model 1: success last
+```{r fit_M1_factory_block2, echo=FALSE, message=T, warning=T, eval=FALSE}
+DChoiceFactory2$successLast <- 0
+DChoiceFactory2$successLast[2:length(DChoiceFactory2$successLast)] <- DChoiceFactory2$success[1:(length(DChoiceFactory2$success)-1)]
+
+DChoiceFactory2$offerscost <-DChoiceFactory2$offers - DChoiceFactory2$cost 
+DChoiceFactory2$stimNo <- as.factor(DChoiceFactory2$stimNo)
+DChoiceFactory2$subjID_anon <- as.factor(DChoiceFactory2$subjID_anon)
+
+F2fit1 <- brm(act ~ successLast * offerscost +
+                (successLast * offerscost|subjID_anon) +
+                (successLast * offerscost|stimNo),
+              data = DChoiceFactory2 , 
+              family = bernoulli(link = logit),
+              prior = pFit1,
+              cores = cores-1,
+              chains = chains,
+              sample_prior = "yes",
+              iter = iterations,
+              warmup = warmup,
+              seed = seed)
+
+save(F2fit1, file = "brmsFiles/F2fit1.rda")
+```
+
+
+```{r load_M1_factory_block2, echo=FALSE}
+load("brmsFiles/F2fit1.rda")
+
+F2fit1
+H1_F2fit1_success <- hypothesis(F2fit1, "successLast = 0", seed = seed)
+H1_F2fit1_offerCost <- hypothesis(F2fit1, "offerscost = 0", seed = seed)
+H1_F2fit1_successXofferCost <- hypothesis(F2fit1, "successLast:offerscost = 0", 
+                                          seed = seed)
+pp_check(F2fit1)+
+  ggtitle("Factory Task, Block 2", subtitle = "Model 1") +
+  xlab("P(active)")
+pp_check(F2fit1, type = "bars", nsamples = 1000) +
+  ggtitle("Factory Task, Block 2", subtitle = "Model 1")
+```
+
+### trace plot
+```{r traceplot_factory2_M1}
+my_labeller_one <- as_labeller(x = c(
+    'b_Intercept' = 'Intercept',
+    'b_successLast' = 'Success~Last',
+    'b_offerscost' = 'Offer - Cost',
+    'b_successLast:offerscost' = 'Success~Last~x~Offer - Cost'
+  ), 
+  default = label_parsed)
+
+png(filename = "figures/FigS4_tracePlot_F2fit1.png", 
+    width = ((700*2))/3, height = 1400/3)
+
+mcmc_trace(F2fit1, 
+           pars = c("b_Intercept",
+                    "b_successLast", 
+                    "b_offerscost",
+                    "b_successLast:offerscost"),
+           facet_args = list(nrow = 2, labeller = my_labeller_one),
+           window = c(0, iterations-warmup))
+
+dev.off()
+```
+
+
+## Model 2: probwin
+
+```{r fit_M2_factory_block2, echo=FALSE, message=T, warning=T, eval=FALSE}
+DChoiceFactory2$trialStim <- 0
+for (i in 1:length(listSubjID)) {
+  for (j in 1:length(unique(DChoiceFactory2$probWin))) {
+      DChoiceFactory2[DChoiceFactory2$subjID_anon==listSubjID[i] & DChoiceFactory2$probWin==unique(DChoiceFactory2$probWin)[j], ]$trialStim <- 
+    c(1:length(DChoiceFactory2[DChoiceFactory2$subjID_anon==listSubjID[i] & DChoiceFactory2$probWin==unique(DChoiceFactory2$probWin)[j], ]$trialStim))
+  }
+
+}
+
+F2fit2 <- brm(act ~ trialStim * probWin + (trialStim * probWin|subjID_anon),
+              data = DChoiceFactory2 , 
+              family = bernoulli(link = logit),
+              prior = pFit1,
+              cores = cores-1,
+              chains = chains,
+              sample_prior = "yes",
+              iter = iterations,
+              warmup = warmup,
+              control = list(adapt_delta = 0.95),
+              seed = seed)
+
+save(F2fit2, file = "brmsFiles/F2fit2.rda")
+```
+
+
+```{r load_M2_factory_block2, echo=FALSE}
+load("brmsFiles/F2fit2.rda")
+
+F2fit2
+H1_F2fit2_trialStim <- hypothesis(F2fit2, "trialStim = 0", seed = seed)
+H1_F2fit2_probWin <-hypothesis(F2fit2, "probWin = 0", seed = seed)
+H1_F2fit2_trialStimXprobWin <- hypothesis(F2fit2, "trialStim:probWin = 0", seed = seed)
+
+pp_check(F2fit2) +
+  ggtitle("Factory Task, Block 2", subtitle = "Model 2") + 
+  xlab("P(active)")
+pp_check(F2fit1, type = "bars", nsamples = 1000) +
+  ggtitle("Factory Task, Block 2", subtitle = "Model 2")
+```
+At delta = 0.8
+"There were 514 divergent transitions after warmup. Increasing adapt_delta above 0.8 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup"
+
+At delta = 0.95
+"There were 3 divergent transitions after warmup. Increasing adapt_delta above 0.95 may help. See http://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup"
+
+This was considered fine, and used in the analysis.
+
+### trace plot
+```{r traceplot_factory1_M2}
+my_labeller_one <- as_labeller(x = c(
+    'b_Intercept' = 'Intercept',
+    'b_trialStim' = 'Trial',
+    'b_probWin' = 'Success~Prob',
+    'b_trialStim:probWin' = 'Trial~x~Success~Prob'
+  ), 
+  default = label_parsed)
+
+png(filename = "figures/FigS8_tracePlot_F2fit2.png", 
+    width = ((700*2))/3, height = 1400/3)
+
+mcmc_trace(F2fit2, 
+           pars = c("b_Intercept",
+                    "b_trialStim", 
+                    "b_probWin",
+                    "b_trialStim:probWin"),
+           facet_args = list(nrow = 2, labeller = my_labeller_one),
+           window = c(0, iterations-warmup))
+
+dev.off()
+```
+
+
+# Response to reviewers' comments
+
+
+```{r function to plot model fit against data, echo = FALSE}
+plot_heatMapFit <- function(model, ndraws, data_choice, plotTitle, colRamp = 60, filename){
+  y_rep <- posterior_predict(model, ndraws = ndraws)
+  
+  y_rep_subj <- matrix(nrow = length(unique(data_choice$subjID_anon)), ncol = 60)
+  dist_binom <- matrix(nrow = 60, ncol = length(unique(data_choice$subjID_anon)))
+  temp_sample_yrep <- NULL
+  sumAct_subj <- NULL
+  for (subj in unique(data_choice$subjID_anon)) {
+    temp_sample_yrep <- y_rep[, data_choice$subjID_anon == subj]
+    y_rep_subj[subj,] <- apply(temp_sample_yrep, 2, mean)
+    dist_binom[,subj] <- dbinom(c(1:60), size = 60, mean(y_rep_subj[subj,]))
+    
+    sumAct_subj[subj] <- sum(data_choice[data_choice$subjID_anon == subj, ]$act)
+  }
+  
+  dist_binomSort <- dist_binom[,order(sumAct_subj)]
+
+  png(filename = filename, 
+      width = ((700*2))/3, height = 1500)
+  par(mar = c(4,4,2,2))
+  
+  image(dist_binomSort, ylab = "", 
+        xlab = "N trials active chosen", 
+        yaxt = "n", xaxt = "n",
+        main = plotTitle, cex.lab = 1.7, cex.main = 2,
+        col = hcl.colors(colRamp, "YlOrRd", rev = TRUE))
+  mtext(side = 2, text = "Subjects, sorted by N trials active chosen", 
+        line = 1, cex = 1.7)
+  axis(1, at= c(1:60/60), labels = c(1:60), cex.lab = 3)
+  axis(2, at= c(1/279, 1), labels = c(1, 279), cex.lab = 3)
+  sorted_act<- sort(sumAct_subj)
+  y_subj <- seq(from = 0, to = 1, length.out = 279)
+  for (subj in 1:length(sumAct_subj)) {
+
+    points(x = (sorted_act[subj])/60, y = y_subj[subj], pch = 20, cex = .4)
+    #points(x = (sorted_act[subj])/60, y = y_subj[subj], pch = 1, cex = .01, col = "white")
+  }
+  #abline(h= 1)
+  points(rep(1,colRamp),
+         (1:colRamp)/100,
+         col= hcl.colors(colRamp, "YlOrRd", rev = TRUE),
+         pch = 15, cex = 3)
+  
+  text(x = 0.95, y =(1)/100,"0" )
+  text(x = 0.94, y =(colRamp)/100,labels = round(max(dist_binomSort),2))
+  text(x = 0.94, y = (colRamp/2)/100, labels = "Density", srt = 90, cex = 1.5)
+  lines(x = c(0.9, 0.9), y = c(0,(colRamp+0.7)/100))
+  lines(x = c(1, 0.9), y = c((colRamp+0.7)/100,(colRamp+0.7)/100))
+  
+  dev.off()
+}
+```
+
+
+## Robber 1
+
+### M1
+
+```{r}
+
+offerCost_drawPrior<- prior_draws(R1fit1, variable = "b_offercost")
+
+offerCost_drawPost <- as_draws_df(R1fit1)
+
+par(mfrow=c(2,1), mar=c(0,4,1,1), oma=c(4,0,0,0)) 
+plot(density(offerCost_drawPost$b_offerscost), col= "tomato", lwd = 2, xlim= c(-3.5,3.5),
+     ylim= c(10, 170),
+     main = "",
+     xaxt = "n", 
+     xlab = "n",
+     ylab = "",
+     )
+abline(v = mean(offerCost_drawPrior$b_offercost), lty = 3)
+text(-3.8, 3, "//", cex=1.5,xpd = NA, srt = 145)
+
+par(mar=c(0,4,0,1))
+
+plot(density(offerCost_drawPrior$b_offercost), xlim = c(-3.5, 3.5), col= "dodgerblue", lwd = 2, ylim = c(0, 5), main = "",
+     ylab = "")
+abline(v = mean(offerCost_drawPrior$b_offercost), lty = 3)
+lines(density(offerCost_drawPost$b_offerscost), col= "tomato",lwd = 2)
+legend(x = 1.5,y = 3, col = c("dodgerblue", "tomato"), lty = 1,lwd = 3, legend = c("prior", "posterior") )
+
+mtext("Offer - Cost", side = 1, outer = TRUE, line=2,
+        cex = 1, at = c(0.54) , family = "Arial", font = 2)
+mtext("Density", side = 2, outer = TRUE, line=-1,
+        cex = 1, family = "Arial", font = 2)
+
+```
+
+```{r}
+
+success_drawPrior<- prior_draws(R1fit1, variable = "b_successLast")
+
+success_drawPost <- as_draws_df(R1fit1)
+
+par(mar=c(0,4,1,1), oma=c(4,0,0,0)) 
+plot(density(success_drawPrior$b_successLast), xlim = c(-3.5, 3.5), col= "dodgerblue", lwd = 2, ylim = c(0, 5), main = "",
+     ylab = "",
+     xlab = "")
+abline(v = mean(success_drawPrior$b_successLast), lty = 3)
+  lines(density(success_drawPost$b_successLast), col= "tomato",lwd = 2)
+legend(x = 1.5,y = 2, col = c("dodgerblue", "tomato"), lty = 1,lwd = 3, legend = c("prior", "posterior") )
+
+mtext("Success last", side = 1, outer = TRUE, line=2,
+        cex = 1, at = c(0.54) , family = "Arial", font = 2)
+mtext("Density", side = 2, outer = TRUE, line=-1,
+        cex = 1, family = "Arial", font = 2)
+
+```
+
+
+```{r}
+plot_heatMapFit(model = R1fit1, ndraws = 3000,
+                data_choice = DChoiceRobber1, 
+                plotTitle = "Robber block 1, Model 1",
+                colRamp = 60,
+                filename = "figures/modelfit_R1_M1.png")
+```
+
+### M2
+```{r}
+plot_heatMapFit(model = R1fit2, ndraws = 3000,
+                data_choice = DChoiceRobber1, 
+                plotTitle = "Robber block 1, Model 2",
+                colRamp = 60,
+                filename = "figures/modelfit_R1_M2.png")
+```
+
+## Robber 2
+
+### M1
+```{r}
+plot_heatMapFit(model = R2fit1, ndraws = 3000,
+                data_choice = DChoiceRobber2, 
+                plotTitle = "Robber block 2, Model 1",
+                colRamp = 60,
+                filename = "figures/modelfit_R2_M1.png")
+```
+
+
+### M2
+```{r}
+plot_heatMapFit(model = R2fit2, ndraws = 3000,
+                data_choice = DChoiceRobber2, 
+                plotTitle = "Robber block 2, Model 2",
+                colRamp = 60,
+                filename = "figures/modelfit_R2_M2.png")
+```
+
+## Factory 1
+
+### M1
+```{r}
+plot_heatMapFit(model = F1fit1, ndraws = 3000,
+                data_choice = DChoiceFactory1, 
+                plotTitle = "Factory block 1, Model 1",
+                colRamp = 60,
+                filename = "figures/modelfit_F1_M1.png")
+```
+
+### M2
+```{r}
+plot_heatMapFit(model = F1fit2, ndraws = 3000,
+                data_choice = DChoiceFactory1, 
+                plotTitle = "Factory block 1, Model 2",
+                colRamp = 60,
+                filename = "figures/modelfit_F1_M2.png")
+```
+
+## Factory 2
+
+### M1
+```{r}
+plot_heatMapFit(model = F2fit1, ndraws = 3000,
+                data_choice = DChoiceFactory2, 
+                plotTitle = "Factory block 2, Model 1",
+                colRamp = 60,
+                filename = "figures/modelfit_F2_M1.png")
+```
+
+### M2
+```{r}
+plot_heatMapFit(model = F2fit2, ndraws = 3000,
+                data_choice = DChoiceFactory2, 
+                plotTitle = "Factory block 2, Model 2",
+                colRamp = 60,
+                filename = "figures/modelfit_F2_M2.png")
+```
