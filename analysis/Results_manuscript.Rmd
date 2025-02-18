@@ -1,0 +1,588 @@
+---
+title: "Results"
+author: "Script by Tobias Granwald with text edits by Peter Dayan, Máté Lengyel & Marc Guitart-Masip"
+date: "2025-02-18"
+output: 
+  word_document:
+    reference_docx: template.docx
+---
+
+```{r load packages, echo=FALSE, message=FALSE, warning=FALSE}
+library("R.matlab")
+library("flextable")
+library("brms")
+library("irr")
+library("corrplot")
+```
+
+```{r usefulfunctions,echo=FALSE, message=FALSE, warning=FALSE}
+source("functions/identicalCorr.R")
+
+logistic <- function(x){
+  return(1/(1+exp(-x)))
+}
+
+BF_format <- function(x){
+  if (sqrt(1/x^2)>1e4 & sqrt(1/x^2)<1e20){
+    output <- paste(as.character(round(sqrt(1/x^2)/10^(nchar(round(sqrt(1/x^2)))-1),
+                                    roundDecimalsTxt)),
+                 "e+",
+                 as.character(round(nchar(sqrt(1/x^2)))-1),
+                 sep = "")
+  }
+  else{
+    output <- as.character(round(sqrt(1/x^2), roundDecimalsTxt))
+  }
+  return(output)
+}
+
+# set decimals for text file here
+roundDecimalsTxt <- 3
+```
+
+```{r load_data, echo=FALSE, message=FALSE,warning=FALSE}
+D <- read.delim("data/extractedData.csv", header = TRUE, sep = ",")
+D2 <- read.delim("data/extractedData_FU.csv", header = TRUE, sep = ",")
+```
+
+```{r sort_choice_data,echo=FALSE, message=FALSE, warning=FALSE}
+DChoice <- D[D$category=="choice", ]
+
+DChoice <- DChoice[DChoice$response!="null", ]
+
+DChoice$act <- as.numeric(DChoice$act)
+
+DChoiceRobber <- DChoice[DChoice$task=="robber" , ]
+DChoiceRobber1 <- DChoiceRobber[DChoiceRobber$trial<60, ]
+DChoiceRobber2 <- DChoiceRobber[DChoiceRobber$trial>59, ]
+
+DChoiceFactory <- DChoice[DChoice$task=="factory" , ]
+DChoiceFactory1 <- DChoiceFactory[DChoiceFactory$trial<60, ]
+DChoiceFactory2 <- DChoiceFactory[DChoiceFactory$trial>59, ]
+
+listSubjID <- unique(DChoice$subjID_anon)
+
+D2 <- D2[D2$response!="null", ]
+```
+
+# Results
+
+We follow the analysis plan stated in the preregistration (https://osf.io/rej74) unless otherwise stated. The results reported here replicate in large part the results of a pilot study with 54 participants (see Supplementary results, pilot data). 
+
+## Model agnostic results
+
+```{r load_M1_robber_block1, echo=FALSE, message=FALSE, warning=FALSE}
+seed <- 1337
+
+load("brmsFiles/R1fit1.rda")
+
+H1_R1fit1_success <- hypothesis(R1fit1, "successLast = 0", seed = seed)
+H1_R1fit1_offerCost <- hypothesis(R1fit1, "offerscost = 0", seed = seed)
+H1_R1fit1_successXofferCost <- hypothesis(R1fit1, "successLast:offerscost = 0", 
+                                          seed = seed)
+```
+
+```{r load_M2_robber_block1, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/R1fit2.rda")
+
+H1_R1fit2_trialStim <- hypothesis(R1fit2, "trialStim  =0", seed = seed)
+H1_R1fit2_probWin <- hypothesis(R1fit2, "probWin = 0", seed = seed)
+H1_R1fit2_trialStimXprobWin <- hypothesis(R1fit2, "trialStim:probWin = 0", 
+                                          seed = 1337)
+```
+
+```{r load_M1_robber_block2, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/R2fit1.rda")
+
+H1_R2fit1_success <- hypothesis(R2fit1, "successLast = 0", seed = seed)
+H1_R2fit1_offerCost <- hypothesis(R2fit1, "offerscost = 0", seed = seed)
+H1_R2fit1_successXofferCost <- hypothesis(R2fit1, "successLast:offerscost = 0",
+                                          seed = seed)
+```
+
+```{r load_M2_robber_block2, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/R2fit2.rda")
+
+H1_R2fit2_trialStim <- hypothesis(R2fit2, "trialStim = 0", seed = seed)
+H1_R2fit2_probWin <- hypothesis(R2fit2, "probWin = 0", seed = seed)
+H1_R2fit2_trialStimXprobWin<- hypothesis(R2fit2, "trialStim:probWin = 0", 
+                                         seed = seed)
+```
+
+```{r load_M1_factory_block1, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/F1fit1.rda")
+
+H1_F1fit1_success <- hypothesis(F1fit1, "successLast = 0", seed = seed)
+H1_F1fit1_offerCost <- hypothesis(F1fit1, "offerscost = 0", seed = seed)
+H1_F1fit1_successXofferCost <- hypothesis(F1fit1, "successLast:offerscost = 0", 
+                                          seed = seed)
+```
+
+```{r load_M2_factory_block1, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/F1fit2.rda")
+
+H1_F1fit2_trialStim <- hypothesis(F1fit2, "trialStim = 0", seed = seed)
+H1_F1fit2_probWin <- hypothesis(F1fit2, "probWin = 0", seed = seed)
+H1_F1fit2_trialStimXprobWin <- hypothesis(F1fit2, "trialStim:probWin = 0", 
+                                          seed = seed)
+```
+
+```{r load_M1_factory_block2, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/F2fit1.rda")
+
+H1_F2fit1_success <- hypothesis(F2fit1, "successLast = 0", seed = seed)
+H1_F2fit1_offerCost <- hypothesis(F2fit1, "offerscost = 0", seed = seed)
+H1_F2fit1_successXofferCost <- hypothesis(F2fit1, "successLast:offerscost = 0", 
+                                          seed = seed)
+```
+
+```{r load_M2_factory_block2, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/F2fit2.rda")
+
+H1_F2fit2_trialStim <- hypothesis(F2fit2, "trialStim = 0", seed = seed)
+H1_F2fit2_probWin <- hypothesis(F2fit2, "probWin = 0", seed = seed)
+H1_F2fit2_trialStimXprobWin <- hypothesis(F2fit2, "trialStim:probWin = 0", 
+                                          seed = seed)
+```
+
+```{r results_regression_M1, echo=FALSE, message=FALSE,warning=FALSE}
+# Offer - Cost
+# Robber block 1
+H1_R1fit1_offerCost_est <- round(H1_R1fit1_offerCost$hypothesis$Estimate, roundDecimalsTxt)
+H1_R1fit1_offerCost_BF <- BF_format(H1_R1fit1_offerCost$hypothesis$Evid.Ratio)
+
+# Robber block 2
+H1_R2fit1_offerCost_est <- round(H1_R2fit1_offerCost$hypothesis$Estimate, roundDecimalsTxt)
+H1_R2fit1_offerCost_BF <- BF_format(H1_R2fit1_offerCost$hypothesis$Evid.Ratio)
+
+# Factory block 1
+H1_F1fit1_offerCost_est <- round(H1_F1fit1_offerCost$hypothesis$Estimate, roundDecimalsTxt)
+H1_F1fit1_offerCost_BF <- BF_format(H1_F1fit1_offerCost$hypothesis$Evid.Ratio)
+
+# Factory block 2
+H1_F2fit1_offerCost_est <- round(H1_F2fit1_offerCost$hypothesis$Estimate, roundDecimalsTxt)
+H1_F2fit1_offerCost_BF <- BF_format(H1_F2fit1_offerCost$hypothesis$Evid.Ratio)
+
+# Success on previous trial
+H1_R1fit1_success_est <- round(H1_R1fit1_success$hypothesis$Estimate, roundDecimalsTxt)
+H1_R1fit1_success_BF <- BF_format(H1_R1fit1_success$hypothesis$Evid.Ratio)
+
+H1_R2fit1_success_est <- round(H1_R2fit1_success$hypothesis$Estimate, roundDecimalsTxt)
+H1_R2fit1_success_BF <- BF_format(H1_R2fit1_success$hypothesis$Evid.Ratio)
+
+H1_F1fit1_success_est <- round(H1_F1fit1_success$hypothesis$Estimate, roundDecimalsTxt)
+H1_F1fit1_success_BF <- BF_format(H1_F1fit1_success$hypothesis$Evid.Ratio)
+
+H1_F2fit1_success_est <- round(H1_F2fit1_success$hypothesis$Estimate, roundDecimalsTxt)
+H1_F2fit1_success_BF <- BF_format(H1_F2fit1_success$hypothesis$Evid.Ratio)
+
+# interaction effect
+H1_R1fit1_successXofferCost_est <- round(H1_R1fit1_successXofferCost$hypothesis$Estimate, roundDecimalsTxt)
+H1_R1fit1_successXofferCost_BF <- BF_format(H1_R1fit1_successXofferCost$hypothesis$Evid.Ratio)
+
+H1_R2fit1_successXofferCost_est <-  round(H1_R2fit1_successXofferCost$hypothesis$Estimate, roundDecimalsTxt)
+H1_R2fit1_successXofferCost_BF <- BF_format(H1_R2fit1_successXofferCost$hypothesis$Evid.Ratio)
+
+H1_F1fit1_successXofferCost_est <-  round(H1_F1fit1_successXofferCost$hypothesis$Estimate, roundDecimalsTxt)
+H1_F1fit1_successXofferCost_BF <- BF_format(H1_F1fit1_successXofferCost$hypothesis$Evid.Ratio)
+
+H1_F2fit1_successXofferCost_est <-  round(H1_F2fit1_successXofferCost$hypothesis$Estimate, roundDecimalsTxt)
+H1_F2fit1_successXofferCost_BF <- BF_format(H1_F2fit1_successXofferCost$hypothesis$Evid.Ratio)
+```
+
+We anticipated that participants would use the values associated with the choices and their outcomes to guide their decisions. As an initial test of this hypothesis, we fitted two hierarchical Bayesian logistic regression models to each task and block. The models included subject and stimulus as grouping variables with group level intercepts and slopes. Below we report the results for the population-level effect; for full results see Supplementary Tables 1 to 8. The first model tested the effect of the values presented to the participants (value of the negative outcome and cost of action) and the effect of successes on the previous trial, finding that for both tasks, participants were more likely to make an active choice if the difference between value of the negative outcome (offer) and cost of action (cost; offer-cost) was high (Robber, Block 1: *b* = `r H1_R1fit1_offerCost_est`, 95% CI = [`r round(H1_R1fit1_offerCost$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R1fit1_offerCost$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R1fit1_offerCost_BF`, Block 2: *b* = `r H1_R2fit1_offerCost_est`, 95% CI = [`r round(H1_R2fit1_offerCost$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R2fit1_offerCost$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R2fit1_offerCost_BF`;
+Factory, Block 1: *b* = `r H1_F1fit1_offerCost_est`, 95% CI = [`r round(H1_F1fit1_offerCost$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F1fit1_offerCost$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F1fit1_offerCost_BF`, Block 2: *b* = `r H1_F2fit1_offerCost_est`, 95% CI = [`r round(H1_F2fit1_offerCost$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F2fit1_offerCost$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F2fit1_offerCost_BF`).
+As expected, these results indicate that participants took the values into account when making their choices. We did, however, not see conclusive evidence in favour or against the effect of the outcome of the previous trial on the probability to choose to act on the current trial (Robber, Block 1: *b* = `r H1_R1fit1_success_est`, 95% CI = [`r round(H1_R1fit1_success$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R1fit1_success$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R1fit1_success_BF`, Block 2: *b* = `r H1_R2fit1_success_est`, 95% CI = [`r round(H1_R2fit1_success$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R2fit1_success$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R2fit1_success_BF`;
+Factory, Block 1: *b* = `r H1_F1fit1_success_est`, 95% CI = [`r round(H1_F1fit1_success$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F1fit1_success$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F1fit1_success_BF`, Block 2: *b* = `r H1_F2fit1_success_est`, 95% CI = [`r round(H1_F2fit1_success$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F2fit1_success$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F2fit1_success_BF`).
+We did see an interaction effect between the difference between offers and costs, and the outcome of the previous trial in the robber task (Block 1: *b* = `r H1_R1fit1_successXofferCost_est`, 95% CI = [`r round(H1_R1fit1_successXofferCost$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R1fit1_successXofferCost$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R1fit1_successXofferCost_BF`; 
+Block 2: *b* = `r H1_R2fit1_successXofferCost_est`, 95% CI = [`r round(H1_R2fit1_successXofferCost$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R2fit1_successXofferCost$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R2fit1_successXofferCost_BF`) 
+whereby successes promoted active choices for high value offers (offer-cost), indicating that the outcomes affected choices. In the factory task, this effect was inconclusive in block 1 (*b* = `r H1_F1fit1_successXofferCost_est`, 95% CI = [`r round(H1_F1fit1_successXofferCost$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F1fit1_successXofferCost$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F1fit1_successXofferCost_BF`), but evident in block 2 (*b* = `r H1_F2fit1_successXofferCost_est`, 95% CI = [`r round(H1_F2fit1_successXofferCost$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F2fit1_successXofferCost$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F2fit1_successXofferCost_BF`).
+
+****** **FIGURE 1 ABOUT HERE** ******
+
+```{r results_regression_M2, echo=FALSE, message=FALSE,warning=FALSE}
+H1_R1fit2_trialStimXprobWin_est <- round(H1_R1fit2_trialStimXprobWin$hypothesis$Estimate, roundDecimalsTxt)
+H1_R1fit2_trialStimXprobWin_BF <- BF_format(H1_R1fit2_trialStimXprobWin$hypothesis$Evid.Ratio)
+
+H1_R2fit2_trialStimXprobWin_est <- round(H1_R2fit2_trialStimXprobWin$hypothesis$Estimate, roundDecimalsTxt)
+H1_R2fit2_trialStimXprobWin_BF <- BF_format(H1_R2fit2_trialStimXprobWin$hypothesis$Evid.Ratio)
+
+H1_F1fit2_trialStimXprobWin_est <- round(H1_F1fit2_trialStimXprobWin$hypothesis$Estimate, roundDecimalsTxt)
+H1_F1fit2_trialStimXprobWin_BF <- BF_format(H1_F1fit2_trialStimXprobWin$hypothesis$Evid.Ratio)
+
+H1_F2fit2_trialStimXprobWin_est <- round(H1_F2fit2_trialStimXprobWin$hypothesis$Estimate, roundDecimalsTxt)
+H1_F2fit2_trialStimXprobWin_BF <- BF_format(H1_F2fit2_trialStimXprobWin$hypothesis$Evid.Ratio)
+
+
+H1_R1fit2_trialStim_est <- round(H1_R1fit2_trialStim$hypothesis$Estimate, roundDecimalsTxt)
+H1_R1fit2_trialStim_BF <- BF_format(H1_R1fit2_trialStim$hypothesis$Evid.Ratio)
+
+H1_R2fit2_trialStim_est <- round(H1_R2fit2_trialStim$hypothesis$Estimate, roundDecimalsTxt)
+H1_R2fit2_trialStim_BF <- BF_format(H1_R2fit2_trialStim$hypothesis$Evid.Ratio)
+
+H1_F1fit2_trialStim_est <- round(H1_F1fit2_trialStim$hypothesis$Estimate, roundDecimalsTxt)
+H1_F1fit2_trialStim_BF <- BF_format(H1_F1fit2_trialStim$hypothesis$Evid.Ratio)
+
+H1_F2fit2_trialStim_est <- round(H1_F2fit2_trialStim$hypothesis$Estimate, roundDecimalsTxt)
+H1_F2fit2_trialStim_BF <- BF_format(H1_F2fit2_trialStim$hypothesis$Evid.Ratio)
+```
+
+
+However, this conceptualisation of learning does not consider the possibility that learning may only occur with repeated encounters with the same stimulus, and not between stimuli. This is a distinct possibility as participants were explicitly told that the probability of success changes with each stimulus. Therefore, the outcome of the last trial before a change in stimulus should not impact their choices with the next stimulus. As such, to further test if participants learned from the outcomes of their choices, we constructed a regression model to test whether the probability of making an active choice changed over trials with the same stimulus and how that interacted with the underlying probability of success.
+
+We found clear evidence in favour of an effect of the interaction between the number of trials with the same stimuli and the success probability associated with that stimulus in the robber task (Block 1: *b* = `r H1_R1fit2_trialStimXprobWin_est`, 95% CI = [`r round(H1_R1fit2_trialStimXprobWin$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R1fit2_trialStimXprobWin$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R1fit2_trialStimXprobWin_BF`, Block 2: *b* = `r H1_R2fit2_trialStimXprobWin_est`, 95% CI = [`r round(H1_R2fit2_trialStimXprobWin$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R2fit2_trialStimXprobWin$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R2fit2_trialStimXprobWin_BF`) whereby the more trials the participants encountered the stimuli with low success probability  the fewer active choices were made. This evident in the second block of the factory task (*b* = `r H1_F2fit2_trialStimXprobWin_est`, 95% CI = [`r round(H1_F2fit2_trialStimXprobWin$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F2fit2_trialStimXprobWin$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F2fit2_trialStimXprobWin_BF`) but inconclusive in block 1 (*b* = `r H1_F1fit2_trialStimXprobWin_est`, 95% CI = [`r round(H1_F1fit2_trialStimXprobWin$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F1fit2_trialStimXprobWin$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F1fit2_trialStimXprobWin_BF`). We also found a main effect of trial in the robber task (Block 1: *b* = `r H1_R1fit2_trialStim_est`, 95% CI = [`r round(H1_R1fit2_trialStim$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R1fit2_trialStim$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R1fit2_trialStim_BF`; 
+Block 2: *b* = `r H1_R2fit2_trialStim_est`, 95% CI = [`r round(H1_R2fit2_trialStim$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_R2fit2_trialStim$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_R2fit2_trialStim_BF`) whereby participants had a higher probability to choose to act in early choices with a stimulus compared to the later ones, this effect was also inconclusive in the factory task in block 1 (*b* = `r H1_F1fit2_trialStim_est`, 95% CI = [`r round(H1_F1fit2_trialStim$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F1fit2_trialStim$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F1fit2_trialStim_BF`) but not in block 2 (*b* = `r H1_F2fit2_trialStim_est`, 95% CI = [`r round(H1_F2fit2_trialStim$hypothesis$CI.Lower, roundDecimalsTxt)`, `r round(H1_F2fit2_trialStim$hypothesis$CI.Upper, roundDecimalsTxt)`], *BF~10~* = `r H1_F2fit2_trialStim_BF`; for full results see Supplementary  Tables 8 to 16). These results show that participants learned from the outcomes of their active choice in the robber task but the results for the factory task are inconclusive.
+
+
+
+```{r model_agnostic_act, echo=FALSE, message=FALSE, warning=FALSE}
+F1_act <- aggregate(as.numeric(DChoiceFactory1$act), 
+                    by = list(DChoiceFactory1$subjID_anon), 
+                    FUN = "mean")[,2]
+F2_act <- aggregate(as.numeric(DChoiceFactory2$act),
+                    by = list(DChoiceFactory2$subjID_anon),
+                    FUN = "mean")[,2]
+
+R1_act <- aggregate(as.numeric(DChoiceRobber1$act), 
+                    by = list(DChoiceRobber1$subjID_anon), 
+                    FUN = "mean")[,2]
+R2_act <- aggregate(as.numeric(DChoiceRobber2$act), 
+                    by = list(DChoiceRobber2$subjID_anon),
+                    FUN = "mean")[,2]
+
+
+actDiffTask_test_block1 <- wilcox.test(R1_act,F1_act, paired = T)
+actDiffTask_test_block2 <- wilcox.test(R2_act,F2_act, paired = T)
+```
+
+```{r model_agnostic_success, echo=FALSE, message=FALSE, warning=FALSE}
+
+F1_success <- aggregate(as.numeric(DChoiceFactory1[DChoiceFactory1$act==1, ]$success), 
+                        by = list(DChoiceFactory1[DChoiceFactory1$act==1, ]$subjID_anon),
+                        FUN = "mean")[,2]
+F2_success <- aggregate(as.numeric(DChoiceFactory2[DChoiceFactory2$act==1, ]$success), 
+                        by = list(DChoiceFactory2[DChoiceFactory2$act==1, ]$subjID_anon), 
+                        FUN = "mean")[,2]
+
+R1_success <- aggregate(as.numeric(DChoiceRobber1[DChoiceRobber1$act==1, ]$success), 
+                        by = list(DChoiceRobber1[DChoiceRobber1$act==1, ]$subjID_anon), 
+                        FUN = "mean")[,2]
+R2_success <- aggregate(as.numeric(DChoiceRobber2[DChoiceRobber2$act==1, ]$success),
+                        by = list(DChoiceRobber2[DChoiceRobber2$act==1, ]$subjID_anon),
+                        FUN = "mean")[,2]
+
+
+successDiffTask_test_block1 <- wilcox.test(R1_success,F1_success, paired = T)
+successDiffTask_test_block2 <- wilcox.test(R2_success,F2_success, paired = T)
+
+successDiffTask_test_robber <- wilcox.test(R1_success,R2_success, paired = T)
+successDiffTask_test_factory <- wilcox.test(F1_success,F2_success, paired = T)
+```
+
+In a follow-up post-hoc analysis, which was not part of the preregistered protocol, we explored potential differences between the tasks. Participants chose the active option more frequently in the robber task than the factory task in both block 1 (Robber: *M* = `r round(mean(R1_act),roundDecimalsTxt)`, *SD* = `r round(sd(R1_act),roundDecimalsTxt)`; Factory: *M* = `r round(mean(F1_act),roundDecimalsTxt)`, *SD* = `r round(sd(R1_act),roundDecimalsTxt)`; Wilcoxon signed-rank test: *V* = `r actDiffTask_test_block1$statistic[[1]]`, *p* = `r actDiffTask_test_block1$p.value`) and block 2 (Robber: *M* = `r round(mean(R2_act),roundDecimalsTxt)`, *SD* = `r round(sd(R2_act),roundDecimalsTxt)`; Factory: *M* = `r round(mean(F2_act),roundDecimalsTxt)`, *SD* = `r round(sd(F2_act),roundDecimalsTxt)`; *V* = `r actDiffTask_test_block2$statistic[[1]]`, *p* = `r actDiffTask_test_block2$p.value`). We also saw a small, non-significant, difference in the number of successes participants experienced when they chose the active option in the first block in the different tasks, whereby participants experienced more successes in the robber task than the factory task (Robber: *M* = `r round(mean(R1_success),roundDecimalsTxt)`, *SD* = `r round(sd(R1_success),roundDecimalsTxt)`; Factory: *M* = `r round(mean(F1_success),roundDecimalsTxt)`, *SD* = `r round(sd(F1_success),roundDecimalsTxt)`, *V* = `r successDiffTask_test_block1$statistic[[1]]`, *p* = `r round(successDiffTask_test_block1$p.value, roundDecimalsTxt)`). This was not apparent in the second block (Robber: *M* = `r round(mean(R2_success),roundDecimalsTxt)`, *SD* = `r round(sd(R2_success),roundDecimalsTxt)`; Factory: *M* = `r round(mean(F2_success),roundDecimalsTxt)`, *SD* = `r round(sd(F2_success),roundDecimalsTxt)`, *V* = `r successDiffTask_test_block2$statistic[[1]]`, *p* = `r round(successDiffTask_test_block2$p.value, roundDecimalsTxt)`). We further did not see statistically significant differences in the mean number of successes between the two blocks of the robber task (*V* = `r successDiffTask_test_robber$statistic[[1]]`, *p* = `r round(successDiffTask_test_robber$p.value, roundDecimalsTxt)`) or factory task (V = `r successDiffTask_test_factory$statistic[[1]]`, *p* = `r round(successDiffTask_test_factory$p.value, roundDecimalsTxt)`). 
+
+
+## Choice behaviours are well captured by a Bayesian model
+
+```{r load_model_comparisons_basic_fit, echo=FALSE, message=FALSE, warning=FALSE }
+# Load output files from within task model comparisons
+
+# Block 1
+cbmR1_fit1 <- readMat("computational_models/HBI_robber1/hbi_fit1_softmax_winLose_bayesMS_nonBayes.mat")
+cbmF1_fit1 <- readMat("computational_models/HBI_factory1/hbi_fit1_softmax_winLose_bayesMS_nonBayes.mat")
+
+# Block 2
+cbmR2_fit1 <- readMat("computational_models/HBI_robber2/hbi_fit1_softmax_winLose_bayesMS_nonBayes.mat")
+cbmF2_fit1 <- readMat("computational_models/HBI_factory2/hbi_fit1_softmax_winLose_bayesMS_nonBayes.mat")
+```
+
+To further analyse participants’ choice behaviour, and to test if participants’ choice behaviour could be described by a model including a Bayesian prior, we constructed four different types of choice model. Initially, the models were fitted to each task and block separately. 
+
+Participants’ choice behaviour in the robber task was robustly best fitted by the Bayesian learner model in both blocks (Block 1: *PXP* = `r round(cbmR1_fit1$cbm[[5]][[7]][3], roundDecimalsTxt)`; Block 2: *PXP* = `r round(cbmR2_fit1$cbm[[5]][[7]][3], roundDecimalsTxt)`). This was only the case in the second block of the factory task (Block 1: *PXP* = `r round(cbmF1_fit1$cbm[[5]][[7]][3], roundDecimalsTxt)`; Block 2: *PXP* = `r round(cbmF2_fit1$cbm[[5]][[7]][3], roundDecimalsTxt)`). The best fitting model in the first block of the factory task was the Static probability model (*PXP* = `r round(cbmF1_fit1$cbm[[5]][[7]][4], roundDecimalsTxt)`; see Table 2). These results are consistent with those from the regression models indicating that learning was not as robust in the factory task as in the robber task (for how models differ in predictions of choices over trials see Fig. 1e and 1f). Altogether, these results indicate that the Bayesian model provides the best overall account of participant’s behaviour when modelling the tasks separately.
+
+******* **TABLE 2 ABOUT HERE** **********
+
+We next tested augmentations of the winning models, augmenting the Bayesian learner with between stimulus updating and both the Static probability model and Bayesian learner with a bias parameter in stepwise model-comparisons. Results showed that the choice data in the robber task was best fitted by the unaugmented Bayesian learner model (Block 1: p-r2 25th percentile = 0.1625, median = 0.4047, 75th percentile = 0.5533; Block 2: 25th percentile = -0.1661, median = 0.2618, 75th percentile = 0.4970) whereas the choice data in the factory task was best fitted by a model that included an action bias on top of the Static probability model in block 1 (p-r2 25th percentile = -0.0672, median = 0.3900, 75th percentile = 0.6280) and the basic Bayesian model in block 2 (p-r2 25th percentile = -0.2643, median = 0.3735, 75th percentile = 0.6265); for full results see Supplementary results).
+
+## The parameters of the prior correlate across tasks
+
+```{r load best fitting models, eval= TRUE, echo=FALSE}
+# All participants fitted with best fitting model from above stepwise model comparison
+## Block 1
+cbmF1_threashold_actBias <-  readMat("computational_models/HBI_factory1/hbi_fitsim_static2ActBias_factory1.mat")
+cbmR1_basic_bayes <- readMat("computational_models/HBI_robber1/hbi_fitSim_bayes_robber1.mat")
+
+## Block 2
+cbmR2_bayes_basic <- readMat("computational_models/HBI_robber2/hbi_fitSim_bayes_robber2.mat")
+cbmF2_bayes_actBias <- readMat("computational_models/HBI_factory2/hbi_fitSim_bayes2ActBias_factory2.mat")
+```
+
+```{r correlation_between_params_tasks,echo=FALSE, message=FALSE, warning=FALSE}
+# Block 1
+F1_subjP <- logistic(cbmF1_threashold_actBias$cbm[[5]][[1]][[1]][[1]][,1])
+R1_mu <- logistic(cbmR1_basic_bayes$cbm[[5]][[1]][[1]][[1]][,1])
+
+muB1Corr <- cor.test(R1_mu,F1_subjP, method = "spearman")
+muB1R2 <- identicalCorr(R1_mu,F1_subjP)
+
+# Block 2
+F2_mu <- logistic(cbmF2_bayes_actBias$cbm[[5]][[1]][[1]][[1]][,1])
+R2_mu <- logistic(cbmR2_bayes_basic$cbm[[5]][[1]][[1]][[1]][,1])
+
+F2_sigma <- logistic(cbmF2_bayes_actBias$cbm[[5]][[1]][[1]][[1]][,2])
+R2_sigma <- logistic(cbmR2_bayes_basic$cbm[[5]][[1]][[1]][[1]][,2])
+
+
+muB2Corr <- cor.test(R2_mu,F2_mu, method = "spearman")
+muB2R2 <- identicalCorr(R2_mu,F2_mu)
+sigmaB2Corr <- cor.test(R2_sigma,F2_sigma, method = "spearman")
+sigmaB2R2 <- identicalCorr(R2_sigma,F2_sigma)
+```
+
+```{r permutation_test_pvalues, echo = FALSE, message=FALSE, warning=FALSE}
+mu1 <- cbind(R1_mu, F1_subjP)
+mu2 <- cbind(R2_mu, F2_mu)
+
+sigma2 <- cbind(R2_sigma, F2_sigma)
+
+N <- 10000 # repeat shuffling for N times
+corPerm_mu1 <- numeric(length = N) # vector with the results of the test statistic under each permutation
+corPerm_mu2 <- numeric(length = N)
+
+corPerm_sigma1 <- numeric(length = N) 
+corPerm_sigma2 <- numeric(length = N)
+
+for(i in 1:N){
+  shufdata_mu1 <- mu1[sample(nrow(mu1)),] # shuffle data
+  shufdata_mu2 <- mu2[sample(nrow(mu2)),]
+
+  shufdata_sigma2 <- sigma2[sample(nrow(sigma2)),]
+ 
+  corPerm_mu1[i] <- cor(shufdata_mu1[,1], mu1[,2], 
+                        method = "spearman")
+  corPerm_mu2[i] <- cor(shufdata_mu2[,1], mu2[,2], 
+                        method = "spearman")
+
+  corPerm_sigma2[i] <- cor(shufdata_sigma2[,1], sigma2[,2],
+                           method = "spearman")
+}
+
+corObserved_mu1 <- cor(mu1[,1], mu1[,2], 
+                       method = "spearman")
+corObserved_mu2 <- cor(mu2[,1], mu2[,2], 
+                       method = "spearman")
+
+corObserved_sigma2 <- cor(sigma2[,1], sigma2[,2], 
+                          method = "spearman")
+
+p_value_Cor_mu1 <- (sum(corPerm_mu1>=corObserved_mu1)+1)/length(corPerm_mu1)
+
+p_value_Cor_mu2 <- (sum(corPerm_mu2>=corObserved_mu2)+1)/length(corPerm_mu2)
+
+p_value_Cor_sigma2 <- (sum(corPerm_sigma2>=corObserved_sigma2)+1)/length(corPerm_sigma2)
+```
+
+As an initial test of task invariance, we tested whether the mean of the expected probability of success given action correlated between tasks when estimated using the best fitting models from the stepwise model-comparisons of the augmented models. For each task and block, we extracted each participant’s parameters of the prior or the static subjective probability for block 1 of the factory task. In the first block, we found a strong correlation between the µ~0~ parameter of the prior in the robber task and the non-Bayesian counterpart, *p*, in the factory task (*r~s~*(`r length(R1_mu)-2`) = `r round(muB1Corr$estimate[1], roundDecimalsTxt)`, R^2^ = , *p* = `r p_value_Cor_mu1`; Fig. 2a). Similarly, we found strong correlations between the parameters of the priors in each task in the second block ($\mu$~0~: *r~s~*(`r length(R2_mu)-2`) = `r round(muB2Corr$estimate[1], roundDecimalsTxt)`, R^2^ = , *p* = `r p_value_Cor_mu2`; $\sigma$~0~^2^: *r~s~*(`r length(R2_sigma)-2`) = `r round(sigmaB2Corr$estimate[1], roundDecimalsTxt)`, R^2^ = , *p* = `r p_value_Cor_sigma2`; Fig. 2b-c). 
+
+**** **FIGURE 2 ABOUT HERE** *******
+
+## A task-invariant prior captures the participants’ behaviour
+
+```{r load_model_comparisons_1_2prior,echo=FALSE, message=FALSE, warning=FALSE }
+cbmFull1 <- readMat("computational_models/HBI_full1/hbi_1prior_2prior.mat")
+cbmFull2 <- readMat("computational_models/HBI_full2/hbi_1prior_2prior.mat")
+cbmFollowUp <- readMat("computational_models/HBI_testRetest/Full_FU/hbi_1prior_2prior.mat")
+```
+
+To test the question of task invariance formally, we next constructed two different models that could capture the participants’ behaviours in both tasks. Both models were constructed with separate SoftMax functions for each task, allowing for different levels of randomness in choice across tasks, and included an action bias parameter only in the factory task, as informed by the stepwise model comparisons performed separately for the two tasks (see Supplementary Table 17). Critically, the difference between the two models was that one assumed that participants shared the parameters of the prior across the tasks (1-prior model) while the other assumed separate priors in each task (2-prior model). As hypothesised and preregistered, participants choice data was best fit by a model with a single prior for both task (Block 1: *M.Freq* = `r round(cbmFull1$cbm[[5]][[5]][[1]],roundDecimalsTxt)`, *PXP* = `r round(cbmFull1$cbm[[5]][[7]][[1]],roundDecimalsTxt)`; Block 2: *M.Freq* = `r round(cbmFull2$cbm[[5]][[5]][[1]],roundDecimalsTxt)`, *PXP* = `r round(cbmFull2$cbm[[5]][[7]][[1]],roundDecimalsTxt)`) demonstrating task invariance of the prior. As shown in Fig. 3, this model captures the observed behaviour well (p-r2 for Block 1 at 25th percentile = 0.2045, median = 0.4379, and 75th percentile = 0.5689; Block 2: 25th percentile = -0.0387, median = 0.3179, and 75th percentile = 0.5385).
+
+***** **FIGURE 3 ABOUT HERE** *******
+
+## The measured prior is reliable 
+
+```{r, load_models_testRetest, echo=FALSE, message=FALSE, warning=FALSE}
+cbmFull1_1prior <-  readMat("computational_models/HBI_full1/hbi_fitSim_1prior_full1.mat")
+cbmFull2_1prior <- readMat("computational_models/HBI_full2/hbi_fitSim_1prior_full2.mat")
+```
+
+```{r transform_params_day1, echo=FALSE, message=FALSE, warning=FALSE}
+mu_day1 <- matrix(nrow =  nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), 
+                  ncol = 2)
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  mu_day1[subj,1] <- logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_day1[subj,2] <- logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,1])
+}
+
+sigmarel_day1 <- matrix(nrow =  nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), 
+                        ncol = 2)
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  sigmarel_day1[subj,1] <- logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_day1[subj,2] <- logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,2])
+}
+```
+
+```{r load_models_testRetest_follow-up, echo=FALSE, message=FALSE, warning=FALSE}
+prior_FU_b1 <- readMat("computational_models/HBI_testRetest/Full1/hbi_fitSim_1prior_full1.mat")
+prior_FU_b2 <- readMat("computational_models/HBI_testRetest/Full2/hbi_fitSim_1prior_full2.mat")
+prior_FU_FU <- readMat("computational_models/HBI_testRetest/Full_FU/hbi_fitSim_1prior_full_FU.mat")
+```
+
+```{r transform_params_follow-up, echo=FALSE, message=FALSE, warning=FALSE}
+mu_week <- matrix(nrow =  nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]), 
+                  ncol = 3)
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  mu_week[subj,1] <- logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_week[subj,2] <- logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_week[subj,3] <- logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,1])
+}
+
+sigmarel_week <- matrix(nrow = nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]),
+                        ncol = 3)
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  sigmarel_week[subj,1] <- logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_week[subj,2] <- logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_week[subj,3] <- logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,2])
+}
+```
+
+
+```{r day1_reliability, echo=FALSE, message=FALSE, warning=FALSE}
+icc_mu_day1 <- icc(cbind(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][,1],
+                         cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][,1]),
+                   type = "agreement",
+                   model = "twoway",
+                   unit = "single")
+
+icc_sigmarel_day1<- icc(cbind(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][,2],
+                              cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][,2]),
+                        type = "agreement",
+                        model = "twoway",
+                        unit = "single")
+```
+
+```{r block1_week_reliability, echo=FALSE, message=FALSE, warning=FALSE}
+icc_mu_b1_FU<- icc(cbind(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][,1],
+                         prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,1]),
+                   type = "agreement",
+                   model = "twoway",
+                   unit = "single")
+
+icc_sigmarel_b1_FU<- icc(cbind(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][,2],
+                              prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,2]),
+                         type = "agreement",
+                         model = "twoway",
+                         unit = "single")
+```
+
+```{r block2_week_reliability, echo=FALSE, message=FALSE, warning=FALSE}
+icc_mu_b2_FU<- icc(cbind(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][,1],
+                         prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,1]),
+                   type = "agreement",
+                   model = "twoway",
+                   unit = "single")
+
+icc_sigmarel_b2_FU<- icc(cbind(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][,2],
+                               prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,2]),
+                         type = "agreement",
+                         model = "twoway",
+                         unit = "single")
+```
+
+We next investigated if the parameters of the prior were stable within the session and over time. The follow-up session consisted of only one block of each task with new stimuli, and choice data were modelled using the one prior model (p-r2 at 25th percentile = 0.0539, median = 0.4482, and 75th percentile = 0.5672). For model comparison between the one and two prior models in the follow-up session see Supplementary Table 18.
+
+We quantified the stability of the prior by calculating interclass correlations (ICC) between the two blocks of the first session (N = `r length(listSubjID)`) and between the blocks on the first day and the follow-up (N = `r nrow(mu_week)`). We found the stability of both parameters of the prior to range from moderate to good as indicated by ICC (within session: μ~0~ ICC(2,1) = `r round(icc_mu_day1$value, roundDecimalsTxt)`, 95% CI = [`r round(icc_mu_day1$lbound, roundDecimalsTxt)`, `r round(icc_mu_day1$ubound, roundDecimalsTxt)`], σ~0~^2^ ICC(2,1) = `r round(icc_sigmarel_day1$value, roundDecimalsTxt)`, 95% CI = [`r round(icc_sigmarel_day1$lbound, roundDecimalsTxt)`, `r round(icc_sigmarel_day1$ubound, roundDecimalsTxt)`]; between sessions, Block 1 to follow-up: μ~0~ ICC(2,1) = `r round(icc_mu_b1_FU$value, roundDecimalsTxt)`, 95% CI = [`r round(icc_mu_b1_FU$lbound, roundDecimalsTxt)`, `r round(icc_mu_b1_FU$ubound, roundDecimalsTxt)`], σ~0~^2^ ICC(2,1) = `r round(icc_sigmarel_b1_FU$value, roundDecimalsTxt)`, 95% CI = [`r round(icc_sigmarel_b1_FU$lbound, roundDecimalsTxt)`, `r round(icc_sigmarel_b1_FU$ubound, roundDecimalsTxt)`]; Block 2 to follow-up: μ~0~ ICC(2,1) = `r round(icc_mu_b2_FU$value, roundDecimalsTxt)`, 95% CI = [`r round(icc_mu_b2_FU$lbound, roundDecimalsTxt)`, `r round(icc_mu_b2_FU$ubound, roundDecimalsTxt)`], σ~0~^2^ ICC(2,1) = `r round(icc_sigmarel_b2_FU$value, roundDecimalsTxt)`, 95% CI = [`r round(icc_sigmarel_b2_FU$lbound, roundDecimalsTxt)`, `r round(icc_sigmarel_b2_FU$ubound, roundDecimalsTxt)`], see Fig. 4c and f). These data demonstrate that the prior that we quantify with our method is reliably measured and stable. Alternative reliability measures are reported in Supplementary Tables 19, 20 and 21 and support the same conclusion.
+
+***** **FIGURE 4 ABOUT HERE** ******
+
+## Questionnaire analysis
+
+```{r analyse_questionnaires, echo=FALSE, message=FALSE, warning=FALSE }
+PANAS <- DChoice[DChoice$trial==0 &
+                 DChoice$task=="robber", ]$PosAffect_tot
+
+STAI_T <- DChoice[DChoice$trial==0 &
+                  DChoice$task=="robber", ]$STAIT_tot
+
+PANAS_AC <- DChoice[DChoice$trial==0 &
+                    DChoice$task=="robber" &
+                    DChoice$failed_AC_Q<3, ]$PosAffect_tot
+
+STAI_T_AC <- DChoice[DChoice$trial==0 &
+                     DChoice$task=="robber" &
+                     DChoice$failed_AC_Q<3, ]$STAIT_tot
+
+paramsForCorr <- cbind(mu_day1[,1], mu_day1[,2],
+                       sigmarel_day1[,1], sigmarel_day1[,2],
+                       PANAS, STAI_T)
+
+corrMatrixQuestionaires <- matrix(nrow = 6, ncol = 6)
+corrMatrixQuestionairesPval <- matrix(nrow = 6, ncol = 6)
+
+for (i in 1:6) {
+  for (j in 1:6) {
+    corrEst <- cor.test(paramsForCorr[,i],paramsForCorr[,j], method = "spearman")
+    corrMatrixQuestionaires[i,j] <- corrEst$estimate[[1]]
+    corrMatrixQuestionairesPval[i,j] <- corrEst$p.value[[1]]
+  }
+}
+corrPlotNames <- c("Mu block 1","Mu block 2", 
+                   "Sigma block 1","Sigma block 2",
+                   "Positive affect", "STAI-T") 
+
+colnames(corrMatrixQuestionaires) <- corrPlotNames
+rownames(corrMatrixQuestionaires) <- corrPlotNames
+
+colnames(corrMatrixQuestionairesPval) <- corrPlotNames
+rownames(corrMatrixQuestionairesPval) <- corrPlotNames
+
+corrEst_PANAS_AC1 <- cor.test(mu_day1[DChoice[DChoice$trial==0 &
+                                              DChoice$task=="robber",]$failed_AC_Q<3,1],
+                             PANAS_AC, 
+                             method = "spearman")
+
+
+corrEst_STAI_AC1 <- cor.test(sigmarel_day1[DChoice[DChoice$trial==0 &
+                                                     DChoice$task=="robber",]$failed_AC_Q<3,1],
+                             STAI_T_AC, 
+                             method = "spearman")
+
+corrEst_STAI_AC2 <- cor.test(sigmarel_day1[DChoice[DChoice$trial==0 &
+                                                     DChoice$task=="robber",]$failed_AC_Q<3,2],
+                             STAI_T_AC, 
+                             method = "spearman")
+```
+
+```{r analyse_questionnaires_FU, echo=FALSE, message=FALSE, warning=FALSE }
+PANAS_FU <- D2[D2$trial==0 & D2$task=="robber" &
+                    D2$failed_AC_Q<3, ]$PosAffect_tot
+STAI_T_FU <- D2[D2$trial==0 & D2$task=="robber" &
+                    D2$failed_AC_Q<3, ]$STAIT_tot
+
+
+paramsForCorr <- cbind(mu_week[,3], sigmarel_week[,3], PANAS_FU, STAI_T_FU)
+
+corrMatrixQuestionaires_FU <- matrix(nrow = 4, ncol = 4)
+corrMatrixQuestionairesPval_FU <- matrix(nrow = 4, ncol = 4)
+
+for (i in 1:4) {
+  for (j in 1:4) {
+    corrEst <- cor.test(paramsForCorr[,i],paramsForCorr[,j], method = "spearman")
+    corrMatrixQuestionaires_FU[i,j]<- corrEst$estimate[[1]]
+    corrMatrixQuestionairesPval_FU[i,j] <- corrEst$p.value[[1]]
+  }
+}
+corrPlotNames <- c("Mu Follow-up", "Sigma Follow-up", "Positive affect", "STAI-T") 
+
+colnames(corrMatrixQuestionaires_FU) <- corrPlotNames
+rownames(corrMatrixQuestionaires_FU) <- corrPlotNames
+
+colnames(corrMatrixQuestionairesPval_FU) <- corrPlotNames
+rownames(corrMatrixQuestionairesPval_FU) <- corrPlotNames
+```
+
+We next investigated if the parameters of the prior were correlated with positive affect and non-specific negative affect. Because the overall best fitting model was the 1-prior model, the parameters of each participant’s prior were estimated with this model. Participants’ estimated μ~0~0 and σ~0~^2^ were then correlated with their total PANAS-P and STAI-T scores using Spearman’s correlation (*r~s~*). Figure 5a shows the correlations for the parameters of the prior in block 1 and 2 and their relation to the total scores of the questionnaires.
+
+As hypothesised and preregistered, we found that μ~0~ of the prior was positively correlated with positive affect in block 1 (*r~s~*(`r length(PANAS)-2`) = `r round(corrMatrixQuestionaires[1,5], roundDecimalsTxt)`, *p* = `r round(corrMatrixQuestionairesPval[1,5], roundDecimalsTxt)`; Fig. 5b, top), indicating that participants with a more optimistic prior also had higher levels of self-reported positive affect. This was replicated in the follow-up session (*r~s~*(`r length(PANAS_FU)-2`) = `r round(corrMatrixQuestionaires_FU[1,3], roundDecimalsTxt)`, *p* = `r round(corrMatrixQuestionairesPval_FU[1,3], roundDecimalsTxt)`; Fig. 5b, bottom) but not in block 2 on the first day (*r~s~*(`r length(PANAS)-2`) = `r round(corrMatrixQuestionaires[2,5], roundDecimalsTxt)`, *p* = `r round(corrMatrixQuestionairesPval[2,5], roundDecimalsTxt)`). However, when, in accordance with our preregistration, we removed 3 participants who failed more than 2 of the 6 additional attention checks present in the questionnaires in the first session, the correlation in block 1 was no longer statistically significant (*r~s~*(`r length(PANAS_AC)-2`) = `r round(corrEst_PANAS_AC1$estimate[[1]], roundDecimalsTxt)`, *p* = `r round(corrEst_PANAS_AC1$p.value, roundDecimalsTxt)`, see the red marks in Fig. 5b, top for highlight of removed participants). We note, however, that the strength of the association was not affected, and the change of significance is a consequence of decreased power. Surprisingly, we did not see the hypothesised correlation between the σ~0~^2^ of the prior and STAI-T (Block 1: *r~s~*(`r length(STAI_T_AC)-2`) = `r round(corrEst_STAI_AC1$estimate[[1]], roundDecimalsTxt)`, *p* = `r round(corrEst_STAI_AC1$p.value, roundDecimalsTxt)`; Block 2: *r~s~*(`r length(STAI_T_AC)-2`) = `r round(corrEst_STAI_AC2$estimate[[1]], roundDecimalsTxt)`, *p* = `r round(corrEst_STAI_AC2$p.value, roundDecimalsTxt)`; Follow-up: *r~s~*(`r length(STAI_T_FU)-2`) = `r round(corrMatrixQuestionaires_FU[2,4], roundDecimalsTxt)`, *p* = `r round(corrMatrixQuestionairesPval_FU[2,4], roundDecimalsTxt)`). 
+
+
+***** **FIGURE 5 ABOUT HERE** ******
