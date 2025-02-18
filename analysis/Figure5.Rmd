@@ -1,0 +1,201 @@
+---
+title: "Figure 5"
+author: "Tobias Granwald"
+date: "2025-02-18"
+output: html_document
+---
+
+# Set up
+
+```{r create figure dir, echo=FALSE, warning=FALSE, message=FALSE}
+mainDir <- getwd()
+subDir <- "figures"
+#check if the dir already exists if not create it
+ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+```
+
+```{r load packages, echo=FALSE, message=FALSE, warning=FALSE}
+library("corrplot")
+library("R.matlab")
+```
+
+```{r functions,  echo=FALSE, message=FALSE, warning=FALSE}
+logistic <- function(x){
+  return(1/(1+exp(-x)))
+}
+```
+
+## Load HBI data
+
+### Day 1
+
+```{r, load_models_testRetest, echo=FALSE, message=FALSE, warning=FALSE}
+cbmFull1_1prior <-  readMat("computational_models/HBI_full1/hbi_fitSim_1prior_full1.mat")
+cbmFull2_1prior <- readMat("computational_models/HBI_full2/hbi_fitSim_1prior_full2.mat")
+```
+
+```{r transform_params_day1, echo=FALSE, message=FALSE, warning=FALSE}
+mu_day1 <- matrix(nrow =  nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  mu_day1[subj,1] <- logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_day1[subj,2] <- logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,1])
+}
+
+sigmarel_day1 <- matrix(nrow = nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  sigmarel_day1[subj,1] <- logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_day1[subj,2] <- logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,2])
+}
+```
+
+### Follow-up
+
+```{r load_models_testRetest_follow-up, echo=FALSE, message=FALSE, warning=FALSE}
+prior_FU_b1 <- readMat("computational_models/HBI_testRetest/Full1/hbi_fitSim_1prior_full1.mat")
+prior_FU_b2 <- readMat("computational_models/HBI_testRetest/Full2/hbi_fitSim_1prior_full2.mat")
+prior_FU_FU <- readMat("computational_models/HBI_testRetest/Full_FU/hbi_fitSim_1prior_full_FU.mat")
+```
+
+```{r transform_params_follow-up, echo=FALSE, message=FALSE, warning=FALSE}
+mu_week <- matrix(nrow =  nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]), 
+                  ncol = 3)
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  mu_week[subj,1] <- logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_week[subj,2] <- logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_week[subj,3] <- logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,1])
+}
+
+sigmarel_week <- matrix(nrow = nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]),
+                        ncol = 3)
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  sigmarel_week[subj,1] <- logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_week[subj,2] <- logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_week[subj,3] <- logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,2])
+}
+```
+
+## Load Questionnaire data
+```{r load_data, echo=FALSE, message=FALSE,warning=FALSE}
+D <- read.delim("data/extractedData.csv", header = TRUE, sep = ",")
+D <- D[D$response!="null", ]
+D2 <- read.delim("data/extractedData_FU.csv", header = TRUE, sep = ",")
+D2 <- D2[D2$response!="null", ]
+
+```
+
+
+```{r load_questionnaires, echo=FALSE, message=FALSE, warning=FALSE }
+PANAS <- D[D$trial==0 &
+           D$task=="robber", ]$PosAffect_tot
+
+STAI_T <- D[D$trial==0 &
+            D$task=="robber", ]$STAIT_tot
+
+
+fail_Q_AC <-  D[D$trial==0 & D$task=="robber", ]$failed_AC_Q
+
+PANAS_fail <- PANAS[fail_Q_AC>2]
+PANAS_noAC_all <- PANAS[fail_Q_AC<3]
+STAI_T_NoAC <- STAI_T[fail_Q_AC<3]
+
+mu_day1_fail <- mu_day1[fail_Q_AC>2,]
+mu_day1_noAC_all <- mu_day1[fail_Q_AC<3,]
+
+sigmarel_day1_noAC <- sigmarel_day1[fail_Q_AC<3,]
+
+```
+
+
+```{r load_questionnaires_FU, echo=FALSE, message=FALSE, warning=FALSE }
+PANAS_FU <- D2[D2$trial==0 &
+               D2$task=="robber", ]$PosAffect_tot
+
+STAI_T_FU <- D2[D2$trial==0 &
+                D2$task=="robber", ]$STAIT_tot
+```
+
+# Fig 5A
+```{r corrplot_questionnaires, echo=FALSE, message=FALSE, warning=FALSE}
+paramsForCorr <- cbind(mu_day1[,1], mu_day1[,2], 
+                       sigmarel_day1[,1], sigmarel_day1[,2],
+                       PANAS, STAI_T)
+
+corrMatrixQuestionaires <- matrix(nrow = 6, ncol = 6)
+corrMatrixQuestionairesPval <- matrix(nrow = 6, ncol = 6)
+
+for (i in 1:6) {
+  for (j in 1:6) {
+    corrEst <- cor.test(paramsForCorr[,i],paramsForCorr[,j], method = "spearman")
+    corrMatrixQuestionaires[i,j]<- corrEst$estimate[[1]]
+    corrMatrixQuestionairesPval[i,j] <- corrEst$p.value[[1]]
+  }
+}
+corrPlotNames <- c("Mu block 1","Mu block 2", 
+                   "Sigma block 1","Sigma block 2",
+                   "Positive affect", "STAI-T") 
+
+colnames(corrMatrixQuestionaires) <- corrPlotNames
+rownames(corrMatrixQuestionaires) <- corrPlotNames
+
+colnames(corrMatrixQuestionairesPval) <- corrPlotNames
+rownames(corrMatrixQuestionairesPval) <- corrPlotNames
+
+
+png(filename = "figures/Fig5a.png",width = 800, height = 800)
+par(oma = c(0,0,0,0))
+corrplot(corrMatrixQuestionaires,
+         type = "lower", method = "shade",
+         cl.ratio = 0.2,
+         cl.cex = 1.7,
+         tl.srt = 45,
+         p.mat =corrMatrixQuestionairesPval,
+         sig.level = c(0.001, 0.01, 0.05), pch.cex = 2, tl.cex = 2, tl.col = "black",
+         insig = 'label_sig')
+text(x = -1, y = 8, "A", xpd = NA, cex = 3.5, font = 2, family = "Arial")
+text(x = 7.5, y = 8, "B", xpd = NA, cex = 3.5, font = 2, family = "Arial")
+dev.off()
+```
+
+# Fig 5B
+
+```{r scatter_questionnaires, echo=FALSE, message=FALSE, warning=FALSE}
+png(filename = "figures/Fig5b.png", width = 600, height = 800)
+par(mfrow = c(2,1), mar = c(0,4,2,2), oma = c(4,1,1,0))
+plot(PANAS, mu_day1[,1],
+     ylim= c(0,1),
+     xaxt = "n",
+     xlab = " ",
+     ylab = " ",
+     cex.axis = 1.7,
+     cex = 1.7,
+     lwd = 2,
+     col = "steelblue3")
+points(PANAS_fail, mu_day1_fail[,1], 
+       col = "red", 
+       pch = 4, cex= 1.7, lwd = 2)
+
+mtext(text = expression(Block~1:~mu[0]), side = 2, 
+      family = "Arial", cex = 2, line = 2.4 )
+
+abline(lm(mu_day1[,1]~PANAS), lty = 2, col= "tomato3", lwd = 2)
+
+plot(PANAS_FU, mu_week[,3],
+     ylim= c(0,1),
+     xlim = c(10,50),
+     xlab = " ",
+     ylab = " ",
+     cex.axis = 1.7,
+     cex = 1.7,
+     lwd = 2,
+     col = "steelblue3")
+
+mtext(text = "Positive affect", side = 1, 
+      family = "Arial", cex = 2 ,line = 2.4)
+mtext(text = expression(Follow-Up:~mu[0]), side = 2,
+      family = "Arial", cex = 2, line = 2.4 )
+
+abline(lm(mu_week[,3]~PANAS_FU), lty = 2, col= "tomato3", lwd = 2)
+dev.off()
+```
