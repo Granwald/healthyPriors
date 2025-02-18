@@ -1,0 +1,2144 @@
+---
+title: "Supplementary Material"
+author: "Tobias Granwald"
+date: "2025-02-18"
+output: 
+  word_document:
+    reference_docx: template.docx
+---
+
+```{r load packages, echo=FALSE, message=FALSE, warning=FALSE}
+library("R.matlab")
+library("flextable")
+library("brms")
+library("irr")
+library("corrplot")
+```
+
+```{r usefulfunctions,echo=FALSE, message=FALSE, warning=FALSE}
+source("functions/identicalCorr.R")
+
+logistic <- function(x){
+  return(1/(1+exp(-x)))
+}
+
+
+# set decimals for text file here
+roundDecimalsTxt <- 3
+
+BF_format <- function(x){
+  
+  if (sqrt(1/x^2)>1e4 & sqrt(1/x^2)<1e20){
+    output <- paste(as.character(round(sqrt(1/x^2)/10^(nchar(round(sqrt(1/x^2)))-1),
+                                    roundDecimalsTxt)),
+                 "e+",
+                 as.character(round(nchar(sqrt(1/x^2)))-1),
+                 sep = "")
+  }
+  else{
+    output <- as.character(round(sqrt(1/x^2), roundDecimalsTxt))
+  }
+  return(output)
+}
+
+```
+
+```{r load_data, echo=FALSE, message=FALSE,warning=FALSE}
+D <- read.delim("data/extractedData.csv", header = TRUE, sep = ",")
+D2 <- read.delim("data/extractedData_FU.csv", header = TRUE, sep = ",")
+
+D2$demograph_dateDif <- sqrt((D2$demograph_dateDif)^2)
+```
+
+```{r sort_choice_data,echo=FALSE, message=FALSE, warning=FALSE}
+DChoice <- D[D$category=="choice", ]
+
+DChoice <- DChoice[DChoice$response!="null", ]
+
+DChoice$act <- as.numeric(DChoice$act)
+
+DChoiceRobber <- DChoice[DChoice$task=="robber" , ]
+DChoiceRobber1 <- DChoiceRobber[DChoiceRobber$trial<60, ]
+DChoiceRobber2 <- DChoiceRobber[DChoiceRobber$trial>59, ]
+
+DChoiceFactory <- DChoice[DChoice$task=="factory" , ]
+DChoiceFactory1 <- DChoiceFactory[DChoiceFactory$trial<60, ]
+DChoiceFactory2 <- DChoiceFactory[DChoiceFactory$trial>59, ]
+
+listSubjID <- unique(DChoice$subjID_anon)
+```
+
+
+# Supplementary Results
+
+## Model agnostic results
+
+### Regression model 1, success and value
+
+```{r table_effects_model_1, echo=FALSE, message=FALSE, warning=FALSE}
+fixedEffectsTable1 <- function(data, tableCaption = ""){
+    
+  cwidthTable <- c(1.2,0.8,0.8,0.8,0.8,0.9)
+  
+  sumData <- summary(data)
+  
+  H1_success <- hypothesis(data, "successLast = 0", seed = 1337)
+  H1_offerCost <- hypothesis(data, "offerscost = 0", seed = 1337)
+  H1_successXofferCost <- hypothesis(data, "successLast:offerscost = 0", seed = 1337)
+  
+  BF<- c("-", 
+         BF_format(H1_success$hypothesis$Evid.Ratio),
+         BF_format(H1_offerCost$hypothesis$Evid.Ratio),
+         BF_format(H1_successXofferCost$hypothesis$Evid.Ratio))
+  
+  
+  fixedEff <- cbind(" " = c("Intercept",
+                            "Success Last",
+                            "Offer - Cost" ,
+                            "Success x Offer-Cost" ),
+                    round(sumData$fixed[,1:4], roundDecimalsTxt),
+                    "BF10" = BF)
+  
+  table_fixedEff <- flextable(fixedEff, cwidth = cwidthTable)
+  
+  table_fixedEff <- set_caption(table_fixedEff, tableCaption)
+  table_fixedEff <- fontsize(table_fixedEff, size = 8, part = "all")
+  return(table_fixedEff)
+}
+
+randomEffectsTable1 <- function(data,tableCaption = "" ){
+  
+  cwidthTable <-  c(.9,2.3,0.6,0.6,0.65,0.65)
+  
+  sumData <- summary(data)
+   
+  randEff <- rbind (round(sumData$random$subjID_anon[,1:4], roundDecimalsTxt),
+                         round(sumData$random$stimNo[,1:4], roundDecimalsTxt))
+  
+     
+  randEff <- cbind("Group" = c("Subject SD", rep(" ",3),
+                                      "Subject Corr", rep(" ",5),
+                                      "Stimulus SD", rep(" ",3),
+                                      "Stimulus Corr", rep(" ",5)),
+                          " " = rep(c("Intercept",
+                                      "Success Last",
+                                      "Offer - Cost" ,
+                                      "Success x Offer-Cost",
+                                      "Intercept, Success Last",
+                                      "Intercept, Offer-Cost",
+                                      "Success Last, Offer-Cost",
+                                      "Intercept, Success Last x Offer-Cost",
+                                      "Success Last, Success Last x Offer-Cost",
+                                      "Offer-Cost, Success Last x Offer-Cost"),2),
+                          randEff)
+  
+  table_randEff <- flextable(randEff, cwidth = cwidthTable)
+  
+  table_randEff <- set_caption(table_randEff, tableCaption)
+  table_randEff <- fontsize(table_randEff, size = 8, part = "all")
+  
+  return(table_randEff)
+}
+```
+
+
+```{r table_M1_robber_block1_fixed_effects, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/R1fit1.rda")
+
+fixedEffectsTable1(R1fit1, "Table 1, Robber task block 1, fixed effects")
+```
+
+```{r table_M1_robber_block1_random_effects, echo=FALSE, message=FALSE, warning=FALSE}
+randomEffectsTable1(R1fit1, "Table 2, Robber task block 1, random effects")
+```
+
+
+
+```{r load_M1_robber_block2, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/R2fit1.rda")
+
+fixedEffectsTable1(R2fit1, "Table 3, Robber task block 2, fixed effects")
+```
+```{r table_M1_robber_block2_random_effects, echo=FALSE, message=FALSE, warning=FALSE}
+randomEffectsTable1(R2fit1, "Table 4, Robber task block 2, random effects")
+```
+
+
+```{r load_M1_factory_block1, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/F1fit1.rda")
+
+fixedEffectsTable1(F1fit1, "Table 5, Factory task block 1, fixed effects")
+```
+```{r table_M1_factory_block1_random_effects, echo=FALSE, message=FALSE, warning=FALSE}
+randomEffectsTable1(F1fit1, "Table 6, Factory task block 1, random effects")
+```
+
+
+
+```{r load_M1_factory_block2, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/F2fit1.rda")
+
+fixedEffectsTable1(F2fit1,"Table 7, Factory task block 2, fixed effects" )
+```
+
+
+
+```{r table_M1_factory_block2_random_effects, echo=FALSE, message=FALSE, warning=FALSE}
+randomEffectsTable1(F2fit1, "Table 8, Factory task block 2, random effects")
+```
+
+
+
+### Regression model 2, probability of success over trials
+
+```{r table_effects_model_2, echo=FALSE, message=FALSE, warning=FALSE}
+fixedEffectsTable2 <- function(data, tableCaption = ""){
+    
+  cwidthTable <- c(1.2,0.8,0.8,0.8,0.8,0.9)
+  
+  sumData <- summary(data)
+  
+  H1_trialStim <- hypothesis(data, "trialStim  =0", seed = 1337)
+  H1_probWin <- hypothesis(data, "probWin = 0", seed = 1337)
+  H1_trialStimXprobWin <- hypothesis(data, "trialStim:probWin = 0", 
+                                            seed = 1337)
+  
+  BF<- c("-", 
+         BF_format(H1_trialStim$hypothesis$Evid.Ratio),
+         BF_format(H1_probWin$hypothesis$Evid.Ratio),
+         BF_format(H1_trialStimXprobWin$hypothesis$Evid.Ratio))
+  
+  
+
+  fixedEff <- cbind(" " = c("Intercept",
+                            "Trial",
+                            "Success Prob" ,
+                            "Trial x Success Prob"),
+                           round(sumData$fixed[,1:4], 4),
+                           "BF10" = BF)
+  
+  table_fixedEff <- flextable(fixedEff, cwidth = cwidthTable)
+  
+  table_fixedEff <- set_caption(table_fixedEff, tableCaption)
+  table_fixedEff <- fontsize(table_fixedEff, size = 8, part = "all")
+  return(table_fixedEff)
+}
+
+randomEffectsTable2 <- function(data,tableCaption = "" ){
+  
+  cwidthTable <-  c(.9,2,0.6,0.6,0.65,0.65)
+  sumData <- summary(data)
+  
+  randEff <- round(sumData$random$subjID_anon[,1:4], roundDecimalsTxt)
+  
+  
+  randEff <- cbind("Group" = c("Subject SD", rep(" ",3),
+                               "Subject Corr", rep(" ",5)),
+                          " " = c("Intercept",
+                                  "Trial",
+                                  "Success Prob" ,
+                                  "Trial x Success Prob",
+                                  "Intercept, Trial",
+                                  "Intercept, Success Prob",
+                                  "Trial, Success Prob",
+                                  "Intercept, Trial x Success Prob",
+                                  "Trial, Trial x Success Prob",
+                                  "Trial, Trial x Success Prob"),
+                          randEff)
+  
+  table2_randEff <- flextable(randEff, cwidth = cwidthTable)
+  
+  table2_randEff <- set_caption(table2_randEff, tableCaption)
+  table2_randEff <- fontsize(table2_randEff, size = 8, part = "all")
+  
+  return(table2_randEff)
+}
+```
+
+
+
+```{r load_M2_robber_block1, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/R1fit2.rda")
+
+fixedEffectsTable2(R1fit2, "Table 9, Robber Task block 1, fixed effects")
+```
+
+
+```{r table_M2_Robber_block1_random_effects, echo=FALSE, message=FALSE, warning=FALSE}
+randomEffectsTable2(R1fit2, "Table 10, Robber Task block 1, random effects")
+```
+
+
+```{r load_M2_robber_block2, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/R2fit2.rda")
+
+fixedEffectsTable2(R2fit2, "Table 11, Robber Task block 2, fixed effects")
+```
+
+```{r table_M2_Robber_block2_random_effects, echo=FALSE, message=FALSE, warning=FALSE}
+randomEffectsTable2(R2fit2,  "Table 12, Robber Task block 2, random effects")
+```
+
+
+```{r load_M2_factory_block1, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/F1fit2.rda")
+
+fixedEffectsTable2(F1fit2, "Table 13, Factory Task block 1, fixed effects")
+```
+
+```{r table_M2_Factory_block1_random_effects, echo=FALSE, message=FALSE, warning=FALSE}
+randomEffectsTable2(F1fit2, "Table 14, Factory Task block 1, random effects")
+```
+
+
+```{r load_M2_factory_block2, echo=FALSE, message=FALSE, warning=FALSE}
+load("brmsFiles/F2fit2.rda")
+
+fixedEffectsTable2(F2fit2, "Table 15, Factory Task block 2, fixed effects")
+```
+
+
+```{r table_M2_Factory_block2_randomeffects, echo=FALSE, message=FALSE, warning=FALSE}
+randomEffectsTable2(F2fit2, "Table 16, Factory Task block 2, random effects")
+```
+
+## Modeling analysis
+
+```{r load_model_comparisons_basic_fit, echo=FALSE, message=FALSE, warning=FALSE }
+# Load output files from within task model comparisons
+
+# Block 1
+cbmR1_fit1 <- readMat("computational_models/HBI_robber1/hbi_fit1_softmax_winLose_bayes_nonBayes.mat")
+cbmF1_fit1 <- readMat("computational_models/HBI_factory1/hbi_fit1_softmax_winLose_bayes_nonBayes.mat")
+
+# Block 2
+cbmR2_fit1 <- readMat("computational_models/HBI_robber2/hbi_fit1_softmax_winLose_bayes_nonBayes.mat")
+cbmF2_fit1 <- readMat("computational_models/HBI_factory2/hbi_fit1_softmax_winLose_bayes_nonBayes.mat")
+```
+
+
+```{r load_model_comparisons_augmented models, echo=FALSE, message=FALSE, warning=FALSE }
+# Between stimulus learning 
+## Block 1
+cbmR1_fit2 <- readMat("computational_models/HBI_robber1/hbi_fit2_bayes_betweenStimLearn.mat")
+
+## Block 2
+cbmF2_fit2 <- readMat("computational_models/HBI_factory2/hbi_fit2_bayes_betweenStimLearn.mat")
+cbmR2_fit2 <- readMat("computational_models/HBI_robber2/hbi_fit2_bayes_betweenStimLearn.mat")
+
+# Action Bias
+## Block 1
+cbmF1_fit2 <- readMat("computational_models/HBI_factory1/hbi_fit2_nonBayes_2ActBias.mat")
+cbmR1_fit3 <- readMat("computational_models/HBI_robber1/hbi_fit3_bayes_2ActBias.mat")
+
+## Block 2
+cbmF2_fit3 <- readMat("computational_models/HBI_factory2/hbi_fit3_bayes_2ActBias.mat")
+cbmR2_fit3 <-  readMat("computational_models/HBI_robber2/hbi_fit3_bayes_2ActBias.mat")
+```
+
+
+```{r load best fitting models, eval= FALSE, echo=FALSE}
+# All participants fitted with best fitting model from above stepwise model comparison
+## Block 1
+cbmF1_threashold_actBias <-  readMat("computational_models/HBI_factory1/hbi_fitsim_nonBeta2ActBias.mat")
+cbmR1_basic_bayes <- readMat("computational_models/HBI_robber1/hbi_fitSim_bayes_robber1.mat")
+
+## Block 2
+cbmR2_bayes_basic <- readMat("computational_models/HBI_robber2/hbi_fitSim_bayes_robber1.mat")
+cbmF2_bayes_actBias <- readMat("computational_models/HBI_factory2/hbi_fitSim_bayes2Lapse_factory2.mat")
+```
+
+```{r correlation_between_params_tasks,echo=FALSE, message=FALSE, warning=FALSE}
+# Block 1
+F1_subjP <- logistic(cbmF1_fit1$cbm[[5]][[1]][[3]][[1]][,1])
+R1_mu <- logistic(cbmR1_fit1$cbm[[5]][[1]][[3]][[1]][,1])
+
+F1_invT <- 0.01*exp(cbmF1_fit1$cbm[[5]][[1]][[3]][[1]][,2])
+R1_invT <- 0.01*exp(cbmR1_fit1$cbm[[5]][[1]][[3]][[1]][,3])
+
+muB1Corr <- cor.test(R1_mu,F1_subjP, method = "spearman")
+invTB1Corr <- cor.test(R1_invT,F1_invT, method = "spearman")
+
+# Block 2
+F2_mu <- logistic(cbmF2_fit1$cbm[[5]][[1]][[3]][[1]][,1])
+R2_mu <- logistic(cbmR2_fit1$cbm[[5]][[1]][[3]][[1]][,1])
+
+F2_sigma <- logistic(cbmF2_fit1$cbm[[5]][[1]][[3]][[1]][,2])
+R2_sigma <- logistic(cbmR2_fit1$cbm[[5]][[1]][[3]][[1]][,2])
+
+F2_invT <- 0.01*exp(cbmF2_fit1$cbm[[5]][[1]][[3]][[1]][,3])
+R2_invT <- 0.01*exp(cbmR2_fit1$cbm[[5]][[1]][[3]][[1]][,3])
+
+muB2Corr <- cor.test(R2_mu,F2_mu, method = "spearman")
+
+sigmaB2Corr <- cor.test(R2_sigma,F2_sigma, method = "spearman")
+
+invTB2Corr <- cor.test(R2_invT,F2_invT, method = "spearman")
+
+```
+
+```{r permutation_test_pvalues, echo = FALSE, message=FALSE, warning=FALSE}
+mu1 <- cbind(R1_mu, F1_subjP)
+mu2 <- cbind(R2_mu, F2_mu)
+
+sigma2 <- cbind(R2_sigma, F2_sigma)
+
+N <- 10000 # repeat shuffling for N times
+corPerm_mu1 <- numeric(length = N) # vector with the results of the test statistic under each permutation
+corPerm_mu2 <- numeric(length = N)
+
+corPerm_sigma1 <- numeric(length = N) 
+corPerm_sigma2 <- numeric(length = N)
+
+for(i in 1:N){
+  shufdata_mu1 <- mu1[sample(nrow(mu1)),] # shuffle data
+  shufdata_mu2 <- mu2[sample(nrow(mu2)),]
+
+  shufdata_sigma2 <- sigma2[sample(nrow(sigma2)),]
+ 
+  corPerm_mu1[i] <- cor(shufdata_mu1[,1], mu1[,2], 
+                        method = "spearman")
+  corPerm_mu2[i] <- cor(shufdata_mu2[,1], mu2[,2], 
+                        method = "spearman")
+
+  corPerm_sigma2[i] <- cor(shufdata_sigma2[,1], sigma2[,2],
+                           method = "spearman")
+}
+
+corObserved_mu1 <- cor(mu1[,1], mu1[,2], 
+                       method = "spearman")
+corObserved_mu2 <- cor(mu2[,1], mu2[,2], 
+                       method = "spearman")
+
+corObserved_sigma2 <- cor(sigma2[,1], sigma2[,2], 
+                          method = "spearman")
+
+p_value_Cor_mu1 <- (sum(corPerm_mu1>=corObserved_mu1)+1)/length(corPerm_mu1)
+
+p_value_Cor_mu2 <- (sum(corPerm_mu2>=corObserved_mu2)+1)/length(corPerm_mu2)
+
+p_value_Cor_sigma2 <- (sum(corPerm_sigma2>=corObserved_sigma2)+1)/length(corPerm_sigma2)
+```
+
+
+### Task-invariance.
+
+```{r load_model_comparisons_1_2prior,echo=FALSE, message=FALSE, warning=FALSE }
+cbmFull1<-  readMat("computational_models/HBI_full1/hbi_1prior_2prior.mat")
+cbmFull2<-  readMat("computational_models/HBI_full2/hbi_1prior_2prior.mat")
+cbmFollowUp<-  readMat("computational_models/HBI_testRetest/Full_FU/hbi_1prior_2prior.mat")
+```
+
+```{r table_1_2_priorModels,echo=FALSE, message=FALSE, warning=FALSE,}
+
+TableLables <- c("1-Prior + Factory Bidirectional Bias", "2-Prior + Factory Bidirectional Bias")
+tabelDims <- c(.8,.6,1,1)
+
+HBI_fit_full <- rbind(cbmFull1$cbm[[5]][[5]], cbmFull1$cbm[[5]][[7]],
+                      cbmFull2$cbm[[5]][[5]], cbmFull2$cbm[[5]][[7]],
+                      cbmFollowUp$cbm[[5]][[5]], cbmFollowUp$cbm[[5]][[7]])
+
+HBI_fit_full <- round(HBI_fit_full, digits = 4)
+HBI_fit_full <- as.data.frame(HBI_fit_full)
+
+names(HBI_fit_full)<- TableLables
+
+HBI_fit_full <- cbind("Session"= c("Block 1","", "Block 2","", "Follow-Up", ""), " "=c(rep(c("M.freq", "PXP"),3)),HBI_fit_full)
+
+
+table_HBIfit_full<- flextable(HBI_fit_full, cwidth =tabelDims)
+table_HBIfit_full<- italic(table_HBIfit_full, j = 2, italic = TRUE, part = "body")
+table_HBIfit_full <- set_caption(table_HBIfit_full,
+                                 caption = "Table 17, Model comparison between 1- and 2 - prior Bayesian models.")
+
+table_HBIfit_full <- bold(table_HBIfit_full, j = 3)
+table_HBIfit_full <- fontsize(table_HBIfit_full, size = 8, part = "all")
+
+table_HBIfit_full
+```
+
+### Reliability 
+
+```{r, load_models_testRetest, echo=FALSE, message=FALSE, warning=FALSE}
+cbmFull1_1prior <-  readMat("computational_models/HBI_full1/hbi_fitSim_1prior_full1.mat")
+cbmFull2_1prior <- readMat("computational_models/HBI_full2/hbi_fitSim_1prior_full2.mat")
+```
+
+```{r transform_params_day1, echo=FALSE, message=FALSE, warning=FALSE}
+mu_day1 <- matrix(nrow =  nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  mu_day1[subj,1] <- logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_day1[subj,2] <- logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,1])
+}
+
+sigmarel_day1 <- matrix(nrow =  nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  sigmarel_day1[subj,1] <- logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_day1[subj,2] <- logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,2])
+}
+
+invT_R_day1 <- matrix(nrow = nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+invT_F_day1 <- matrix(nrow = nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  invT_R_day1[subj,1] <- 0.01 * exp(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,3])
+  invT_R_day1[subj,2] <- 0.01 * exp(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,3])
+  invT_F_day1[subj,1] <- 0.01 * exp(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,4])
+  invT_F_day1[subj,2] <- 0.01 * exp(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,4])
+}
+
+actBias_day1 <- matrix(nrow = nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]]), ncol = 2)
+
+for (subj in 1:nrow(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]])) {
+  actBias_day1[subj,1] <- 2 * logistic(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][subj,5])-1
+  actBias_day1[subj,2] <- 2 * logistic(cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][subj,5])-1
+}
+
+```
+
+```{r load_models_testRetest_follow-up, echo=FALSE, message=FALSE, warning=FALSE}
+prior_FU_b1 <- readMat("computational_models/HBI_testRetest/Full1/hbi_fitSim_1prior_full1.mat")
+prior_FU_b2 <- readMat("computational_models/HBI_testRetest/Full2/hbi_fitSim_1prior_full2.mat")
+prior_FU_FU <- readMat("computational_models/HBI_testRetest/Full_FU/hbi_fitSim_1prior_full_FU.mat")
+```
+
+```{r transform_params_follow-up, echo=FALSE, message=FALSE, warning=FALSE}
+mu_week <- matrix(nrow =  nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]), 
+                  ncol = 3)
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  mu_week[subj,1] <- logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_week[subj,2] <- logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,1])
+  mu_week[subj,3] <- logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,1])
+}
+
+sigmarel_week <- matrix(nrow = nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]),
+                        ncol = 3)
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  sigmarel_week[subj,1] <- logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_week[subj,2] <- logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,2])
+  sigmarel_week[subj,3] <- logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,2])
+}
+
+invT_R_week <- matrix(nrow =  nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]), 
+                    ncol = 3)
+invT_F_week <- matrix(nrow =  nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]), 
+                    ncol = 3)
+
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  invT_R_week[subj,1] <- 0.01 * exp(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,3])
+  
+  invT_R_week[subj,2] <- 0.01 * exp(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,3])
+  
+  invT_R_week[subj,3] <- 0.01 * exp(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,3])
+  
+  invT_F_week[subj,1] <- 0.01 * exp(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,4])
+  
+  invT_F_week[subj,2] <- 0.01 * exp(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,4])
+  
+  invT_F_week[subj,3] <- 0.01 * exp(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,4])
+}
+
+actBias_week <- matrix(nrow = nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]]), ncol = 3)
+
+for (subj in 1:nrow(prior_FU_b1$cbm[[5]][[1]][[1]][[1]])) {
+  actBias_week[subj,1] <- 2 * logistic(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][subj,5])-1
+  actBias_week[subj,2] <- 2 * logistic(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][subj,5])-1
+  actBias_week[subj,3] <- 2 * logistic(prior_FU_FU$cbm[[5]][[1]][[1]][[1]][subj,5])-1
+}
+
+```
+
+
+```{r day1_reliability, echo=FALSE, message=FALSE, warning=FALSE}
+icc_mu_day1<- icc(cbind(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][,1],
+                        cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][,1]),
+                  type = "agreement",
+                  model = "twoway",
+                  unit = "single")
+
+icc_sigmarel_day1<- icc(cbind(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][,2],
+                              cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][,2]),
+                        type = "agreement",
+                        model = "twoway",
+                        unit = "single")
+
+icc_invTR_day1 <- icc(cbind(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][,3],
+                            cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][,3]),
+                      type = "agreement",
+                      model = "twoway",
+                      unit = "single")
+
+icc_invTF_day1 <- icc(cbind(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][,4],
+                            cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][,4]),
+                      type = "agreement",
+                      model = "twoway",
+                      unit = "single")
+
+icc_actBias_day1 <- icc(cbind(cbmFull1_1prior$cbm[[5]][[1]][[1]][[1]][,5],
+                              cbmFull2_1prior$cbm[[5]][[1]][[1]][[1]][,5]),
+                        type = "agreement",
+                        model = "twoway",
+                        unit = "single")
+```
+
+```{r block1_week_reliability, echo=FALSE, message=FALSE, warning=FALSE}
+icc_mu_b1_FU<- icc(cbind(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][,1],
+                         prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,1]),
+                   type = "agreement",
+                   model = "twoway",
+                   unit = "single")
+
+icc_sigmarel_b1_FU<- icc(cbind(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][,2],
+                               prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,2]),
+                         type = "agreement",
+                         model = "twoway",
+                         unit = "single")
+
+icc_invTR_b1_FU <- icc(cbind(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][,3],
+                             prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,3]),
+                       type = "agreement",
+                       model = "twoway",
+                       unit = "single")
+
+icc_invTF_b1_FU <- icc(cbind(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][,4],
+                             prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,4]),
+                       type = "agreement",
+                       model = "twoway",
+                       unit = "single")
+
+icc_actBias_b1_FU <- icc(cbind(prior_FU_b1$cbm[[5]][[1]][[1]][[1]][,5],
+                               prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,5]),
+                         type = "agreement",
+                         model = "twoway",
+                         unit = "single")
+```
+
+```{r block2_week_reliability, echo=FALSE, message=FALSE, warning=FALSE}
+icc_mu_b2_FU<- icc(cbind(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][,1],
+                         prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,1]),
+                   type = "agreement",
+                   model = "twoway",
+                   unit = "single")
+
+icc_sigmarel_b2_FU<- icc(cbind(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][,2],
+                               prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,2]),
+                         type = "agreement",
+                         model = "twoway",
+                         unit = "single")
+
+icc_invTR_b2_FU <- icc(cbind(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][,3],
+                             prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,3]),
+                       type = "agreement",
+                       model = "twoway",
+                       unit = "single")
+
+icc_invTF_b2_FU <- icc(cbind(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][,4],
+                             prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,4]),
+                       type = "agreement",
+                       model = "twoway",
+                       unit = "single")
+
+icc_actBias_b2_FU <- icc(cbind(prior_FU_b2$cbm[[5]][[1]][[1]][[1]][,5],
+                               prior_FU_FU$cbm[[5]][[1]][[1]][[1]][,5]),
+                         type = "agreement",
+                         model = "twoway",
+                         unit = "single")
+```
+
+
+```{r day1_reliability_full, echo=FALSE, message=FALSE, warning=FALSE}
+
+reliability_day1<- data.frame(matrix(nrow = 5))
+reliability_day1$Parameters <- c("Mu", "Sigma",
+                                 "InvT Robber", "InvT Factory",
+                                 "Bidirectional bias")
+
+reliability_day1$R2 <- c(identicalCorr(mu_day1[,1],mu_day1[,2]),
+                         identicalCorr(sigmarel_day1[,1],sigmarel_day1[,2]),
+                         identicalCorr(invT_R_day1[,1],invT_R_day1[,2]),
+                         identicalCorr(invT_F_day1[,1],invT_F_day1[,2]),
+                         identicalCorr(actBias_day1[,1],actBias_day1[,2]))
+
+reliability_day1$rs <- c(cor(mu_day1[,1],mu_day1[,2], method = "spearman"),
+                         cor(sigmarel_day1[,1],sigmarel_day1[,2], method = "spearman"),
+                         cor(invT_R_day1[,1],invT_R_day1[,2], method = "spearman"),
+                         cor(invT_F_day1[,1],invT_F_day1[,2], method = "spearman"),
+                         cor(actBias_day1[,1],actBias_day1[,2], method = "spearman"))
+
+
+reliability_day1$ICC <- c(icc_mu_day1$value, 
+                          icc_sigmarel_day1$value, 
+                          icc_invTR_day1$value,
+                          icc_invTF_day1$value,
+                          icc_actBias_day1$value)
+
+reliability_day1 <- reliability_day1[,2:5]
+
+reliability_day1[,2:4]<- round(reliability_day1[,2:4], digits = 3)  
+```
+
+```{r block1_week_reliability_full, echo=FALSE, message=FALSE, warning=FALSE}
+
+reliability_b1_FU<- data.frame(matrix(nrow = 5))
+reliability_b1_FU$Parameters <- c("Mu", "Sigma",
+                                  "InvT Robber", "InvT Factory",
+                                  "Bidirectional bias")
+
+reliability_b1_FU$R2 <- c(identicalCorr(mu_week[,1],mu_week[,3]),
+                          identicalCorr(sigmarel_week[,1],sigmarel_week[,3]),
+                          identicalCorr(invT_R_week[,1],invT_R_week[,3]),
+                          identicalCorr(invT_F_week[,1],invT_F_week[,3]),
+                          identicalCorr(actBias_week[,1],actBias_week[,3]))
+
+reliability_b1_FU$rs <- c(cor(mu_week[,1],mu_week[,3], method = "spearman"),
+                          cor(sigmarel_week[,1],sigmarel_week[,3], method = "spearman"),
+                          cor(invT_R_week[,1],invT_R_week[,3], method = "spearman"),
+                          cor(invT_F_week[,1],invT_F_week[,3], method = "spearman"),
+                          cor(actBias_week[,1],actBias_week[,3], method = "spearman"))
+
+
+reliability_b1_FU$ICC <- c(icc_mu_b1_FU$value,
+                           icc_sigmarel_b1_FU$value,
+                           icc_invTR_b1_FU$value,
+                           icc_invTF_b1_FU$value,
+                           icc_actBias_b1_FU$value)
+
+reliability_b1_FU <- reliability_b1_FU[,2:5]
+
+reliability_b1_FU[,2:4]<- round(reliability_b1_FU[,2:4], digits = 3)  
+```
+
+```{r block2_week_reliability_full, echo=FALSE, message=FALSE, warning=FALSE}
+
+reliability_b2_FU<- data.frame(matrix(nrow = 5))
+reliability_b2_FU$Parameters <- c("Mu", "Sigma",
+                                  "InvT Robber", "InvT Factory",
+                                  "Bidirectional bias")
+
+reliability_b2_FU$R2 <- c(identicalCorr(mu_week[,1],mu_week[,3]),
+                          identicalCorr(sigmarel_week[,1],sigmarel_week[,3]),
+                          identicalCorr(invT_R_week[,1],invT_R_week[,3]),
+                          identicalCorr(invT_F_week[,1],invT_F_week[,3]),
+                          identicalCorr(actBias_week[,1],actBias_week[,3]))
+
+reliability_b2_FU$rs <- c(cor(mu_week[,2],mu_week[,3], method = "spearman"),
+                          cor(sigmarel_week[,2],sigmarel_week[,3], method = "spearman"),
+                          cor(invT_R_week[,2],invT_R_week[,3], method = "spearman"),
+                          cor(invT_F_week[,2],invT_F_week[,3], method = "spearman"),
+                          cor(actBias_week[,2],actBias_week[,3], method = "spearman"))
+
+
+reliability_b2_FU$ICC <- c(icc_mu_b2_FU$value,
+                           icc_sigmarel_b2_FU$value,
+                           icc_invTR_b2_FU$value,
+                           icc_invTF_b2_FU$value,
+                           icc_actBias_b2_FU$value)
+
+reliability_b2_FU <- reliability_b2_FU[,2:5]
+
+reliability_b2_FU[,2:4]<- round(reliability_b2_FU[,2:4], digits = 3)  
+```
+
+
+
+```{r day1_reliability_table, echo=FALSE, message=FALSE, warning=FALSE}
+tabelDims <- c(1, 0.8,0.8,0.9)
+table_reliability_day1 <- flextable(reliability_day1, cwidth = tabelDims)
+table_reliability_day1 <- set_caption(table_reliability_day1,
+                                 caption = "Table 18, Test retest, block 1 and 2.")
+
+table_reliability_day1 <- fontsize(table_reliability_day1, size = 8, part = "all")
+table_reliability_day1
+```
+
+
+
+```{r week_b1_fu_reliability_table, echo=FALSE, message=FALSE, warning=FALSE}
+tabelDims <- c(1, 0.8,0.8,0.9)
+table_reliability_b1_FU <- flextable(reliability_b1_FU, cwidth = tabelDims)
+table_reliability_b1_FU <- set_caption(table_reliability_b1_FU,
+                                 caption = "Table 19, Test retest, block 1 follow-up.")
+table_reliability_b1_FU <- fontsize(table_reliability_b1_FU, size = 8, part = "all")
+table_reliability_b1_FU
+```
+
+```{r week_b2_fu_reliability_table, echo=FALSE, message=FALSE, warning=FALSE}
+tabelDims <- c(1, 0.8,0.8,0.9)
+table_reliability_b2_FU <- flextable(reliability_b2_FU, cwidth = tabelDims)
+table_reliability_b2_FU <- set_caption(table_reliability_b2_FU,
+                                 caption = "Table 20, Test retest, block 2 follow-up.")
+table_reliability_b2_FU <- fontsize(table_reliability_b2_FU, size = 8, part = "all")
+table_reliability_b2_FU
+```
+
+
+
+## Robustness Checks and Sensitivity Analyses.
+
+
+### Model recovery
+
+```{r load_model_rec_data, echo=FALSE, message=FALSE, warning=FALSE}
+robber1BasicConfuseM_SoftMax <- readMat("computational_models/Simulations/confusionMatrix/robber1/basicFit/softMax/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+robber1BasicConfuseM_WSLS <- readMat("computational_models/Simulations/confusionMatrix/robber1/basicFit/winStayLoseShift/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+robber1BasicConfuseM_Bayes <- readMat("computational_models/Simulations/confusionMatrix/robber1/basicFit/bayes/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+robber1BasicConfuseM_StaticT <- readMat("computational_models/Simulations/confusionMatrix/robber1/basicFit/nonBayes/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+
+
+factory1BasicConfuseM_SoftMax <- readMat("computational_models/Simulations/confusionMatrix/factory1/basicFit/softMax/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+factory1BasicConfuseM_WSLS <- readMat("computational_models/Simulations/confusionMatrix/factory1/basicFit/winStayLoseShift/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+factory1BasicConfuseM_Bayes <- readMat("computational_models/Simulations/confusionMatrix/factory1/basicFit/bayes/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+factory1BasicConfuseM_StaticT <- readMat("computational_models/Simulations/confusionMatrix/factory1/basicFit/nonBayes/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+
+```
+
+
+```{r plot_basic_confuseMatrix,echo=FALSE, message=FALSE, warning=FALSE, out.width=650 }
+
+robberBasicConfuseM<- rbind(c(robber1BasicConfuseM_SoftMax$cbm[[5]][[5]]),
+                            c(robber1BasicConfuseM_WSLS$cbm[[5]][[5]]),
+                            c(robber1BasicConfuseM_Bayes$cbm[[5]][[5]]),
+                            c(robber1BasicConfuseM_StaticT$cbm[[5]][[5]]))
+
+robberBasicConfuseM <- as.matrix(robberBasicConfuseM)
+
+colnames(robberBasicConfuseM) <- c("SoftMax", "WSLS", "Bayesian", "Static")
+rownames(robberBasicConfuseM) <- c("SoftMax", "WSLS", "Bayesian", "Static")
+
+
+factoryBasicConfuseM<- rbind(c(factory1BasicConfuseM_SoftMax$cbm[[5]][[5]]),
+                            c(factory1BasicConfuseM_WSLS$cbm[[5]][[5]]),
+                            c(factory1BasicConfuseM_Bayes$cbm[[5]][[5]]),
+                            c(factory1BasicConfuseM_StaticT$cbm[[5]][[5]]))
+
+factoryBasicConfuseM <- as.matrix(factoryBasicConfuseM)
+
+colnames(factoryBasicConfuseM) <- c("SoftMax", "WSLS", "Bayesian", "Static")
+rownames(factoryBasicConfuseM) <- c("SoftMax", "WSLS", "Bayesian", "Static")
+
+par(mfrow=c(1,2),
+    mar= c(1,2,1,1),
+    oma= c(0,0,0,0))
+corrplot(robberBasicConfuseM,
+         col.lim = c(0,1),
+         method = "square",
+         addCoef.col = 'black',
+         tl.col = 'black',
+         tl.cex = .6,
+         tl.srt = 0,
+         tl.offset = .7,
+         tl.pos= "t",
+         col= COL1("YlOrRd"),
+         cl.pos = "n",
+         cl.cex = .6,
+         number.cex = .9,
+         mar = c(1,3,1,0))
+text(x = -0.5, y = 5, "a",xpd=NA, font = 2, family= "Arial" )
+
+text(x = -.0000001, y = 4,
+     labels = "Softmax",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 3,
+     labels = "WSLS",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 2,
+     labels = "Bayesian",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 1,
+     labels = "Static",
+     xpd=NA,
+     cex = 0.6)
+
+text(x = -.7, y = 2.5, 
+     labels = "Simulated",
+     xpd=NA,
+     srt=90,
+     cex= 0.8)
+text(x = 2.5, y = 5,
+     labels = "Observed",
+     xpd=NA,
+     cex = 0.8)
+
+corrplot(factoryBasicConfuseM,
+         col.lim = c(0,1),
+         method = "square",
+         addCoef.col = 'black',
+         tl.col = 'black',
+         tl.cex = .6,
+         tl.srt = 0,
+         tl.offset = .7,
+         tl.pos= "t",
+         col= COL1("YlOrRd"),
+         cl.pos = "n",
+         cl.cex = .6,
+         number.cex = .9,
+         mar = c(1,3,1,0))
+text(x = -0.5, y = 5, "b",xpd=NA, font = 2, family= "Arial" )
+text(x = -.0000001, y = 4,
+     labels = "Softmax",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 3,
+     labels = "WSLS",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 2,
+     labels = "Bayesian",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 1,
+     labels = "Static",
+     xpd=NA,
+     cex = 0.6)
+
+
+text(x = -.7, y = 2.5, 
+     labels = "Simulated",
+     xpd=NA,
+     srt=90,
+     cex= 0.8)
+text(x = 2.5, y = 5,
+     labels = "Observed",
+     xpd=NA,
+     cex = 0.8)
+```
+
+
+```{r load_model_rec_data block2, echo=FALSE, message=FALSE, warning=FALSE}
+robber2BasicConfuseM_SoftMax <- readMat("computational_models/Simulations/confusionMatrix/robber2/basicFit/softMax/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+robber2BasicConfuseM_WSLS <- readMat("computational_models/Simulations/confusionMatrix/robber2/basicFit/winStayLoseShift/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+robber2BasicConfuseM_Bayes <- readMat("computational_models/Simulations/confusionMatrix/robber2/basicFit/bayes/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+robber2BasicConfuseM_StaticT <- readMat("computational_models/Simulations/confusionMatrix/robber2/basicFit/nonBayes/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+
+
+factory2BasicConfuseM_SoftMax <- readMat("computational_models/Simulations/confusionMatrix/factory2/basicFit/softMax/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+factory2BasicConfuseM_WSLS <- readMat("computational_models/Simulations/confusionMatrix/factory2/basicFit/winStayLoseShift/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+factory2BasicConfuseM_Bayes <- readMat("computational_models/Simulations/confusionMatrix/factory2/basicFit/bayes/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+factory2BasicConfuseM_StaticT <- readMat("computational_models/Simulations/confusionMatrix/factory2/basicFit/nonBayes/hbi_simBayes_softmax_winLose_bayes_nonBayes.mat")
+
+```
+
+
+
+```{r plot_basic_confuseMatrix2,echo=FALSE, message=FALSE, warning=FALSE, out.width=650 }
+
+robberBasicConfuseM<- rbind(c(robber2BasicConfuseM_SoftMax$cbm[[5]][[5]]),
+                            c(robber2BasicConfuseM_WSLS$cbm[[5]][[5]]),
+                            c(robber2BasicConfuseM_Bayes$cbm[[5]][[5]]),
+                            c(robber2BasicConfuseM_StaticT$cbm[[5]][[5]]))
+
+robberBasicConfuseM <- as.matrix(robberBasicConfuseM)
+
+colnames(robberBasicConfuseM) <- c("SoftMax", "WSLS", "Bayesian", "Static")
+rownames(robberBasicConfuseM) <- c("SoftMax", "WSLS", "Bayesian", "Static")
+
+
+factoryBasicConfuseM<- rbind(c(factory2BasicConfuseM_SoftMax$cbm[[5]][[5]]),
+                            c(factory2BasicConfuseM_WSLS$cbm[[5]][[5]]),
+                            c(factory2BasicConfuseM_Bayes$cbm[[5]][[5]]),
+                            c(factory2BasicConfuseM_StaticT$cbm[[5]][[5]]))
+
+factoryBasicConfuseM <- as.matrix(factoryBasicConfuseM)
+
+colnames(factoryBasicConfuseM) <- c("SoftMax", "WSLS", "Bayesian", "Static")
+rownames(factoryBasicConfuseM) <- c("SoftMax", "WSLS", "Bayesian", "Static")
+
+par(mfrow=c(1,2),
+    mar= c(1,2,1,1),
+    oma= c(0,0,0,0))
+corrplot(robberBasicConfuseM,
+         col.lim = c(0,1),
+         method = "square",
+         addCoef.col = 'black',
+         tl.col = 'black',
+         tl.cex = .6,
+         tl.srt = 0,
+         tl.offset = .7,
+         tl.pos= "t",
+         col= COL1("YlOrRd"),
+         cl.pos = "n",
+         cl.cex = .6,
+         number.cex = .9,
+         mar = c(1,3,1,0))
+text(x = -0.5, y = 5, "a",xpd=NA, font = 2)
+
+text(x = -.0000001, y = 4,
+     labels = "Softmax",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 3,
+     labels = "WSLS",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 2,
+     labels = "Bayesian",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 1,
+     labels = "Static",
+     xpd=NA,
+     cex = 0.6)
+
+text(x = -.7, y = 2.5, 
+     labels = "Simulated",
+     xpd=NA,
+     srt=90,
+     cex= 0.8)
+text(x = 2.5, y = 5,
+     labels = "Observed",
+     xpd=NA,
+     cex = 0.8)
+
+corrplot(factoryBasicConfuseM,
+         col.lim = c(0,1),
+         method = "square",
+         addCoef.col = 'black',
+         tl.col = 'black',
+         tl.cex = .6,
+         tl.srt = 0,
+         tl.offset = .7,
+         tl.pos= "t",
+         col= COL1("YlOrRd"),
+         cl.pos = "n",
+         cl.cex = .6,
+         number.cex = .9,
+         mar = c(1,3,1,0))
+text(x = -0.5, y = 5, "b",xpd=NA, font = 2)
+text(x = -.0000001, y = 4,
+     labels = "Softmax",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 3,
+     labels = "WSLS",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 2,
+     labels = "Bayesian",
+     xpd=NA,
+     cex = 0.6)
+text(x = -.01, y = 1,
+     labels = "Static",
+     xpd=NA,
+     cex = 0.6)
+
+
+text(x = -.7, y = 2.5, 
+     labels = "Simulated",
+     xpd=NA,
+     srt=90,
+     cex= 0.8)
+text(x = 2.5, y = 5,
+     labels = "Observed",
+     xpd=NA,
+     cex = 0.8)
+```
+
+
+```{r, echo = FALSE}
+cbm_R1ConfuseAugm_contLearn_bayes <- readMat("computational_models/Simulations/confusionMatrix/robber1/augmented/bayes/hbi_bayes_contLearn.mat")
+cbm_R1ConfuseAugm_contLearn <- readMat("computational_models/Simulations/confusionMatrix/robber1/augmented/contLearn/hbi_bayes_contLearn.mat")
+
+cbm_R1ConfuseAugm_2lapse_bayes <- readMat("computational_models/Simulations/confusionMatrix/robber1/augmented/bayes/hbi_bayes_2lapse.mat")
+cbm_R1ConfuseAugm_2lapse <- readMat("computational_models/Simulations/confusionMatrix/robber1/augmented/2Lapse/hbi_bayes_2lapse.mat")
+
+cbm_F1ConfuseAugm_2lapse_staticT <- readMat("computational_models/Simulations/confusionMatrix/factory1/augmented/static/hbi_nonBeta_2lapse.mat")
+cbm_F1ConfuseAugm_2lapse <- readMat("computational_models/Simulations/confusionMatrix/factory1/augmented/staticActBias/hbi_nonBeta_2lapse.mat")
+
+```
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE, out.width=600}
+
+augmConfuseMRContLearn <- rbind(cbm_R1ConfuseAugm_contLearn_bayes$cbm[[5]][[5]],cbm_R1ConfuseAugm_contLearn$cbm[[5]][[5]])
+augmConfuseMR2Lapse <- rbind(cbm_R1ConfuseAugm_2lapse_bayes$cbm[[5]][[5]],cbm_R1ConfuseAugm_2lapse$cbm[[5]][[5]])
+
+
+augmConfuseMFContLearn <- rbind(cbm_F1ConfuseAugm_2lapse_staticT$cbm[[5]][[5]],cbm_F1ConfuseAugm_2lapse$cbm[[5]][[5]])
+augmConfuseMF2Lapse <- rbind(cbm_F1ConfuseAugm_2lapse_staticT$cbm[[5]][[5]],cbm_F1ConfuseAugm_2lapse$cbm[[5]][[5]])
+
+
+robberAugmConfuseM <- list(augmConfuseMRContLearn, augmConfuseMR2Lapse )
+factoryAugmConfuseM <- list(augmConfuseMFContLearn,augmConfuseMF2Lapse )
+
+par(mfrow = c(2,2), oma = c(2,0,1,0))
+
+for (confuse in 1:2) {
+  
+  corrplot(robberAugmConfuseM[[confuse]],
+           col.lim = c(0,1),
+           method = "square",
+           addCoef.col = 'black',
+           tl.col = 'black',
+           tl.cex = .6,
+           tl.srt = 0,
+           tl.offset = .5,
+           tl.pos = "n",
+           col= COL1("Blues"),
+           cl.pos = "n",
+           cl.cex = .6,
+           cl.offset = 10,
+           number.cex = .9,
+           mar = c(0,0,1.5,0))
+
+
+  if(confuse == 1 ) {
+
+    text(x = -.1, y = 2.8,
+         labels = "a",
+         xpd=NA,
+         cex = 1.5,
+         font = 2)
+  
+  }  
+  text(x = 0.3, y = 2,
+       labels = "Basic",
+       xpd=NA,
+       cex = 0.7)
+  text(x = 1, y = 2.6,
+       labels = "Basic",
+       xpd=NA,
+       cex = 0.7)
+  
+  if(confuse == 1){
+    text(x = 0.2, y = 1,
+         labels = "ContLearn",
+         xpd=NA,
+         cex = 0.7)
+    text(x = 2, y = 2.6,
+         labels = "ContLearn",
+         xpd=NA,
+         cex = 0.7)
+    
+  }
+  
+  if(confuse == 2){
+    text(x = -0.1, y = 1,
+         labels = "Bidirectional Bias",
+         xpd=NA,
+         cex = 0.7)
+    text(x = 2, y = 2.6,
+         labels = "Bidirectional Bias",
+         xpd=NA,
+         cex = 0.7)
+  }
+    
+
+    
+
+    
+  if (confuse == 1 ||confuse == 3) {
+  text(x = -.1, y = 1.5, 
+       labels = "Simulated",
+       xpd=NA,
+       srt=90,
+       cex= 0.8)  
+  }
+  if(confuse == 1 ||confuse == 2) {
+    text(x = 1.5, y = 2.8,
+       labels = "Observed",
+       xpd=NA,
+       cex = 0.8)
+  
+    }
+}
+
+for (confuse in 1:2) {
+  if(confuse==1){
+    plot.new()
+  } else {
+    corrplot(factoryAugmConfuseM[[confuse]],
+           col.lim = c(0,1),
+           method = "square",
+           addCoef.col = 'black',
+           tl.col = 'black',
+           tl.cex = .6,
+           tl.srt = 0,
+           tl.offset = .5,
+           tl.pos = "n",
+           col= COL1("YlOrRd"),
+           cl.pos = "n",
+           cl.cex = .5,
+           cl.offset = 10,
+           number.cex = .9,
+           mar = c(0,0,1.5,0))
+  }
+  
+  
+  if(confuse == 2 ) {
+
+    text(x = -.1, y = 2.8,
+         labels = "b",
+         xpd=NA,
+         cex = 1.5,
+         font = 2)
+    text(x = 0.3, y = 2,
+       labels = "Static",
+       xpd=NA,
+       cex = 0.7)
+    text(x = 1, y = 2.6,
+       labels = "Static",
+       xpd=NA,
+       cex = 0.7)
+  }  
+  
+  if(confuse == 2){
+    text(x = -0.1, y = 1,
+         labels = "Bidirectional Bias",
+         xpd=NA,
+         cex = 0.7)
+    text(x = 2, y = 2.6,
+         labels = "Bidirectional Bias",
+         xpd=NA,
+         cex = 0.7)
+  }
+    
+  if (confuse == 2) {
+  text(x = -.1, y = 1.5, 
+       labels = "Simulated",
+       xpd=NA,
+       srt=90,
+       cex= 0.8)  
+  }
+
+}
+
+```
+
+
+```{r,  echo = FALSE}
+cbm_R2ConfuseAugm_contLearn_bayes <- readMat("computational_models/Simulations/confusionMatrix/robber2/augmented/bayes/hbi_bayes_contLearn.mat")
+cbm_R2ConfuseAugm_contLearn <- readMat("computational_models/Simulations/confusionMatrix/robber2/augmented/contLearn/hbi_bayes_contLearn.mat")
+
+cbm_R2ConfuseAugm_2lapse_bayes <- readMat("computational_models/Simulations/confusionMatrix/robber2/augmented/bayes/hbi_bayes_2lapse.mat")
+cbm_R2ConfuseAugm_2lapse <- readMat("computational_models/Simulations/confusionMatrix/robber2/augmented/2Lapse/hbi_bayes_2lapse.mat")
+
+cbm_F2ConfuseAugm_contLearn_bayes <- readMat("computational_models/Simulations/confusionMatrix/factory2/augmented/bayes/hbi_bayes_contLearn.mat")
+cbm_F2ConfuseAugm_contLearn <- readMat("computational_models/Simulations/confusionMatrix/factory2/augmented/contLearn/hbi_bayes_contLearn.mat")
+
+cbm_F2ConfuseAugm_2lapse_bayes <- readMat("computational_models/Simulations/confusionMatrix/factory2/augmented/bayes/hbi_bayes_2lapse.mat")
+cbm_F2ConfuseAugm_2lapse <- readMat("computational_models/Simulations/confusionMatrix/factory2/augmented/bayesBias/hbi_bayes_2lapse.mat")
+
+cbm_F1ConfuseAugm_2lapse_staticT <- readMat("computational_models/Simulations/confusionMatrix/factory1/augmented/static/hbi_static_2lapse.mat")
+cbm_F1ConfuseAugm_2lapse <- readMat("computational_models/Simulations/confusionMatrix/factory1/augmented/staticActBias/hbi_static_2lapse.mat")
+
+
+```
+
+
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE, out.width=600}
+
+augmConfuseMRContLearn <- rbind(cbm_R2ConfuseAugm_contLearn_bayes$cbm[[5]][[5]],cbm_R2ConfuseAugm_contLearn$cbm[[5]][[5]])
+augmConfuseMR2Lapse <- rbind(cbm_R2ConfuseAugm_2lapse_bayes$cbm[[5]][[5]],cbm_R2ConfuseAugm_2lapse$cbm[[5]][[5]])
+
+
+augmConfuseMFContLearn <- rbind(cbm_F2ConfuseAugm_contLearn_bayes$cbm[[5]][[5]],cbm_F2ConfuseAugm_contLearn$cbm[[5]][[5]])
+augmConfuseMF2Lapse <- rbind(cbm_F2ConfuseAugm_2lapse_bayes$cbm[[5]][[5]],cbm_F2ConfuseAugm_2lapse$cbm[[5]][[5]])
+
+
+robberAugmConfuseM <- list(augmConfuseMRContLearn, augmConfuseMR2Lapse )
+factoryAugmConfuseM <- list(augmConfuseMFContLearn,augmConfuseMF2Lapse )
+
+par(mfrow = c(2,2), oma = c(2,0,1,0))
+
+for (confuse in 1:2) {
+  
+  corrplot(robberAugmConfuseM[[confuse]],
+           col.lim = c(0,1),
+           method = "square",
+           addCoef.col = 'black',
+           tl.col = 'black',
+           tl.cex = .6,
+           tl.srt = 0,
+           tl.offset = .5,
+           tl.pos = "n",
+           col= COL1("Blues"),
+           cl.pos = "n",
+           cl.cex = .5,
+           cl.offset = 10,
+           number.cex = .9,
+           mar = c(0,0,1.5,0))
+
+
+  if(confuse == 1 ) {
+    text(x = 3.3, y = 2.8,
+         labels = "Robber Task",
+         xpd=NA,
+         cex = 1.5)
+    text(x = -.1, y = 2.8,
+         labels = "a",
+         xpd=NA,
+         cex = 1.5,
+         font = 2)
+  
+  }  
+  text(x = 0.3, y = 2,
+       labels = "Basic",
+       xpd=NA,
+       cex = 0.7)
+  text(x = 1, y = 2.6,
+       labels = "Basic",
+       xpd=NA,
+       cex = 0.7)
+  
+  if(confuse == 1){
+    text(x = 0.2, y = 1,
+         labels = "ContLearn",
+         xpd=NA,
+         cex = 0.7)
+    text(x = 2, y = 2.6,
+         labels = "ContLearn",
+         xpd=NA,
+         cex = 0.7)
+    
+  }
+  
+  if(confuse == 2){
+    text(x = -0.1, y = 1,
+         labels = "Bidirectional Bias",
+         xpd=NA,
+         cex = 0.7)
+    text(x = 2, y = 2.6,
+         labels = "Bidirectional Bias",
+         xpd=NA,
+         cex = 0.7)
+  }
+    
+
+    
+
+    
+  if (confuse == 1 ||confuse == 3) {
+  text(x = -.1, y = 1.5, 
+       labels = "Simulated",
+       xpd=NA,
+       srt=90,
+       cex= 0.8)  
+  }
+  if(confuse == 1 ||confuse == 2) {
+    text(x = 1.5, y = 2.8,
+       labels = "Observed",
+       xpd=NA,
+       cex = 0.8)
+  
+    }
+}
+
+for (confuse in 1:2) {
+  corrplot(factoryAugmConfuseM[[confuse]],
+           col.lim = c(0,1),
+           method = "square",
+           addCoef.col = 'black',
+           tl.col = 'black',
+           tl.cex = .6,
+           tl.srt = 0,
+           tl.offset = .5,
+           tl.pos = "n",
+           col= COL1("YlOrRd"),
+           cl.pos = "n",
+           cl.cex = .5,
+           cl.offset = 10,
+           number.cex = .9,
+           mar = c(0,0,1.5,0))
+
+
+  if(confuse == 1 ) {
+    text(x = 3.3, y = 2.8,
+         labels = "Factory Task",
+         xpd=NA,
+         cex = 1.5)
+    text(x = -.1, y = 2.8,
+         labels = "b",
+         xpd=NA,
+         cex = 1.5,
+         font = 2)
+  
+  }  
+  text(x = 0.3, y = 2,
+       labels = "Basic",
+       xpd=NA,
+       cex = 0.7)
+  text(x = 1, y = 2.6,
+       labels = "Basic",
+       xpd=NA,
+       cex = 0.7)
+  
+  if(confuse == 1){
+    text(x = 0.2, y = 1,
+         labels = "ContLearn",
+         xpd=NA,
+         cex = 0.7)
+    text(x = 2, y = 2.6,
+         labels = "ContLearn",
+         xpd=NA,
+         cex = 0.7)
+    
+  }
+  
+  if(confuse == 2){
+    text(x = -0.1, y = 1,
+         labels = "Bidirectional Bias",
+         xpd=NA,
+         cex = 0.7)
+    text(x = 2, y = 2.6,
+         labels = "Bidirectional Bias",
+         xpd=NA,
+         cex = 0.7)
+  }
+    
+  if (confuse == 1 ||confuse == 3) {
+  text(x = -.1, y = 1.5, 
+       labels = "Simulated",
+       xpd=NA,
+       srt=90,
+       cex= 0.8)  
+  }
+
+}
+
+```
+
+
+
+```{r,  echo = FALSE}
+cbm_R1ConfuseAugm_contLearn_bayes <- readMat("computational_models/Simulations/confusionMatrix/robber1/BayesFitMS/bayes/hbi_bayes_contLearn.mat")
+cbm_R1ConfuseAugm_contLearn <- readMat("computational_models/Simulations/confusionMatrix/robber1/BayesFitMS/contLearn/hbi_bayes_contLearn.mat")
+
+cbm_R1ConfuseAugm_2lapse_bayes <- readMat("computational_models/Simulations/confusionMatrix/robber1/BayesFitMS/bayes/hbi_bayes_2lapse.mat")
+cbm_R1ConfuseAugm_2lapse <- readMat("computational_models/Simulations/confusionMatrix/robber1/BayesFitMS/2Lapse/hbi_bayes_2lapse.mat")
+
+cbm_F1ConfuseAugm_2lapse_staticT <- readMat("computational_models/Simulations/confusionMatrix/factory1/augmented/static/hbi_static_2lapse.mat")
+cbm_F1ConfuseAugm_2lapse <- readMat("computational_models/Simulations/confusionMatrix/factory1/augmented/staticdActBias/hbi_static_2lapse.mat")
+
+```
+
+
+
+```{r load_model_rec_data_fulltask, echo=FALSE, message=FALSE, warning=FALSE}
+cbm_fullTaskConfuseM1prior <- readMat("computational_models/Simulations/confusionMatrix/full1/1prior/hbi_1prior_2prior.mat")
+cbm_fullTaskConfuseM2prior<-  readMat("computational_models/Simulations/confusionMatrix/full1/2prior/hbi_1prior_2prior.mat")
+
+fullConfuseM <- rbind(cbm_fullTaskConfuseM1prior$cbm[[5]][[5]],cbm_fullTaskConfuseM2prior$cbm[[5]][[5]])
+colnames(fullConfuseM) <- c("1 prior", "2 prior")
+rownames(fullConfuseM) <- c("1 prior", "2 prior")
+```
+
+
+
+```{r load_model_rec_data_fulltask_B2, echo=FALSE, message=FALSE, warning=FALSE}
+cbm_full2TaskConfuseM1prior <- readMat("computational_models/Simulations/confusionMatrix/full2/1priorFActBias/hbi_1prior_2prior.mat")
+cbm_full2TaskConfuseM2prior<-  readMat("computational_models/Simulations/confusionMatrix/full2/2priorFActBias/hbi_1prior_2prior.mat")
+
+full2ConfuseM <- rbind(cbm_full2TaskConfuseM1prior$cbm[[5]][[5]],cbm_full2TaskConfuseM2prior$cbm[[5]][[5]])
+colnames(full2ConfuseM) <- c("1 prior", "2 prior")
+rownames(full2ConfuseM) <- c("1 prior", "2 prior")
+```
+
+```{r plot_full_model_Rec,echo=FALSE, message=FALSE, warning=FALSE, out.width=300}
+
+
+
+corrplot(fullConfuseM,
+         col.lim = c(0,1),
+         method = "square",
+         addCoef.col = 'black',
+         tl.col = 'black',
+         tl.cex = .9,
+         tl.srt = 0,
+         tl.offset = .7,
+         col= COL1("YlOrRd"),
+         cl.pos = "n",
+         cl.cex = .9,
+         number.cex = 1.5,
+         mar = c(1,3,1,0))
+
+text(x = -.05, y = 2.6, 
+     labels = "a",
+     xpd=NA,
+     #srt=90,
+     cex= 2,
+     font = 2)
+
+
+text(x = -.05, y = 1.5, 
+     labels = "Simulated",
+     xpd=NA,
+     srt=90,
+     cex= 1)
+text(x = 1.5, y = 2.6,
+     labels = "Observed",
+     xpd=NA,
+     cex = 1)
+
+corrplot(full2ConfuseM,
+         col.lim = c(0,1),
+         method = "square",
+         addCoef.col = 'black',
+         tl.col = 'black',
+         tl.cex = .9,
+         tl.srt = 0,
+         tl.offset = .7,
+         col= COL1("Oranges"),
+         cl.pos = "n",
+         cl.cex = .9,
+         number.cex = 1.5,
+         mar = c(1,3,1,0))
+
+text(x = -.05, y = 2.6, 
+     labels = "b",
+     xpd=NA,
+     #srt=90,
+     cex= 2,
+     font = 2)
+
+
+text(x = -.05, y = 1.5, 
+     labels = "Simulated",
+     xpd=NA,
+     srt=90,
+     cex= 1)
+text(x = 1.5, y = 2.6,
+     labels = "Observed",
+     xpd=NA,
+     cex = 1)
+
+```
+
+
+
+### Parameter recovery.
+
+```{r load_paramsRecovery_params,echo=FALSE, message=FALSE, warning=FALSE}
+
+
+robberBayesMSObsHBI <- readMat("computational_models/Simulations/confusionMatrix/robber1/basicFit/bayes/hbi_fitsim_prior.mat")
+robberBayesMSObs <- robberBayesMSObsHBI$cbm[[5]][[1]][[1]][[1]]
+factoryBayesMSObsHBI <- readMat("computational_models/Simulations/confusionMatrix/factory1/augmented/staticActBias/hbi_nonBeta_2lapse_parameterRec.mat")
+factoryBayesMSObs <- factoryBayesMSObsHBI$cbm[[5]][[1]][[1]][[1]]
+fullBayesMSLinWObsHBI <-  readMat("computational_models/Simulations/confusionMatrix/full1/1prior/hbi_fitsim_1prior.mat")
+fullBayesMSLinWObs <- fullBayesMSLinWObsHBI$cbm[[5]][[1]][[1]][[1]]
+
+robberBayesMSSimHBI <- readMat("computational_models/Simulations/confusionMatrix/robber1/basicFit/bayes/all_sim_data_bayes.mat")
+factoryBayesMSSimHBI <- readMat("computational_models/Simulations/confusionMatrix/factory1/augmented/staticActBias/all_sim_data_staticActBias.mat")
+fullBayesMSLinWSimHBI <- readMat("computational_models/Simulations/confusionMatrix/full1/1prior/all_sim_data_1prior.mat")
+
+robberBayesMSSim<-matrix(nrow = length(fullBayesMSLinWSimHBI$data), ncol = 3)
+factoryBayesMSSim<-matrix(nrow = length(fullBayesMSLinWSimHBI$data), ncol = 3)
+fullBayesMSLinWSim<-matrix(nrow = length(fullBayesMSLinWSimHBI$data), ncol = 5)
+
+for (subj in 1:length(fullBayesMSLinWSimHBI$data)) {
+  robberBayesMSSim[subj,] <- robberBayesMSSimHBI$data[[subj]][[1]][[7]]
+  factoryBayesMSSim[subj,] <- factoryBayesMSSimHBI$data[[subj]][[1]][[7]]
+  fullBayesMSLinWSim[subj,] <- fullBayesMSLinWSimHBI$data[[subj]][[1]][[8]]
+}
+
+
+mu_paramRec <- matrix(nrow =  nrow(robberBayesMSObs), ncol = 6)
+
+for (subj in 1:nrow(robberBayesMSObs)) {
+  mu_paramRec[subj,1] <- logistic(robberBayesMSSim[subj,1])
+  mu_paramRec[subj,2] <- logistic(robberBayesMSObs[subj,1])
+  mu_paramRec[subj,3] <- logistic(factoryBayesMSSim[subj,1])
+  mu_paramRec[subj,4] <- logistic(factoryBayesMSObs[subj,1])
+  mu_paramRec[subj,5] <- logistic(fullBayesMSLinWSim[subj,1])
+  mu_paramRec[subj,6] <- logistic(fullBayesMSLinWObs[subj,1])
+}
+
+sigmaRel_paramRec <- matrix(nrow =  nrow(robberBayesMSSim), ncol = 4)
+
+for (subj in 1:nrow(robberBayesMSObs)) {
+  sigmaRel_paramRec[subj,1] <-  logistic(robberBayesMSSim[subj,2])
+  sigmaRel_paramRec[subj,2] <-  logistic(robberBayesMSObs[subj,2])
+  sigmaRel_paramRec[subj,3] <-  logistic(fullBayesMSLinWSim[subj,2])
+  sigmaRel_paramRec[subj,4] <-  logistic(fullBayesMSLinWObs[subj,2])
+}
+
+invT_paramRec <- matrix(nrow =  nrow(robberBayesMSSim), ncol = 6)
+
+for (subj in 1:nrow(robberBayesMSSim)) {
+  invT_paramRec[subj,1] <- 0.01*(exp(robberBayesMSSim[subj,3]))
+  invT_paramRec[subj,2] <- 0.01*(exp(robberBayesMSObs[subj,3]))
+  invT_paramRec[subj,3] <- 0.01*(exp(factoryBayesMSSim[subj,2]))
+  invT_paramRec[subj,4] <- 0.01*(exp(factoryBayesMSObs[subj,2]))
+  invT_paramRec[subj,5] <- 0.01*(exp(fullBayesMSLinWSim[subj,3]))
+  invT_paramRec[subj,6] <- 0.01*(exp(fullBayesMSLinWObs[subj,3]))
+}
+
+actBias_paramRec <- matrix(nrow =  nrow(robberBayesMSSim), ncol = 4)
+for (subj in 1:nrow(robberBayesMSSim)) {
+  actBias_paramRec[subj,1] <- (2*(logistic(factoryBayesMSSim[subj,3]))-1)
+  actBias_paramRec[subj,2] <- (2*(logistic(factoryBayesMSObs[subj,3]))-1)
+  actBias_paramRec[subj,3] <- (2*(logistic(fullBayesMSLinWSim[subj,4]))-1)
+  actBias_paramRec[subj,4] <- (2*(logistic(fullBayesMSLinWObs[subj,4]))-1)
+}
+
+```
+
+
+```{r table_paramrec,  echo=FALSE, message=FALSE, warning=FALSE}
+paramRecRMu <- c(identicalCorr(mu_paramRec[,1],mu_paramRec[,2]),
+                 cor(mu_paramRec[,1],mu_paramRec[,2], method = "spearman"))
+
+paramRecFSubjP <- c(identicalCorr(mu_paramRec[,3],mu_paramRec[,4]),
+                    cor(mu_paramRec[,3],mu_paramRec[,4], method = "spearman"))
+
+paramRecFullMu <- c(identicalCorr(mu_paramRec[,5],mu_paramRec[,6]),
+                    cor(mu_paramRec[,5],mu_paramRec[,6], method = "spearman"))
+
+paramRecRSigmaRel <- c(identicalCorr(sigmaRel_paramRec[,1],sigmaRel_paramRec[,2]),
+                       cor(sigmaRel_paramRec[,1],sigmaRel_paramRec[,2], method ="spearman"))
+
+paramRecFullSigmaRel <- c(identicalCorr(sigmaRel_paramRec[,3],sigmaRel_paramRec[,4]),
+                          cor(sigmaRel_paramRec[,3],sigmaRel_paramRec[,4], method ="spearman"))
+
+paramRecRInvT <- c(identicalCorr(invT_paramRec[,1],invT_paramRec[,2]),
+                   cor(invT_paramRec[,1],invT_paramRec[,2], method ="spearman"))
+
+paramRecFInvT <- c(identicalCorr(invT_paramRec[,3],invT_paramRec[,4]),
+                   cor(invT_paramRec[,3],invT_paramRec[,4], method ="spearman"))
+
+paramRecFullInvT <- c(identicalCorr(invT_paramRec[,5],invT_paramRec[,6]),
+                      cor(invT_paramRec[,5],invT_paramRec[,6], method ="spearman"))
+
+paramRec<- rbind(paramRecRMu,paramRecFSubjP, paramRecFullMu,
+                 paramRecRSigmaRel ,paramRecFullSigmaRel,
+                 paramRecRInvT ,paramRecFInvT,paramRecFullInvT)
+
+paramRec<- round(paramRec, 4)
+paramRec<- cbind(c(c("Mu","SubjP", "Mu"),
+                   rep("Sigma",2),
+                   rep("InvT",2),c("InvT R")),
+                 c("Robber", "Factory", "Both Tasks", "Robber", "Both Tasks", "Robber", "Factory", "Both Tasks", "Both Tasks"),
+                 paramRec)
+paramRec<- rbind(paramRec, c("InvT F", "Both Tasks",
+                             round(identicalCorr(0.01*exp(fullBayesMSLinWSim[,4]),
+                                                 0.01*exp(fullBayesMSLinWObs[,4])),4),
+                             round(cor(0.01*exp(fullBayesMSLinWSim[,4]),
+                                       0.01*exp(fullBayesMSLinWObs[,4]), method ="spearman"), 4)))
+
+paramRec<- rbind(paramRec, c("ActBias","Factory",
+                             round(identicalCorr(actBias_paramRec[,1], 
+                                                 actBias_paramRec[,2]),4),
+                             round(cor(actBias_paramRec[,1],
+                                       actBias_paramRec[,2], 
+                                       method ="spearman"), 4)))
+
+paramRec<- rbind(paramRec, c("ActBias","Both Tasks",
+                             round(identicalCorr(actBias_paramRec[,3], 
+                                                 actBias_paramRec[,4]),4),
+                             round(cor(actBias_paramRec[,3],
+                                       actBias_paramRec[,4], 
+                                       method ="spearman"), 4)))
+
+
+
+paramRec<- as.data.frame(paramRec)
+
+```
+
+```{r table_parameterRecovery, echo = FALSE}
+names(paramRec) <- c("Parameter","Task","R2", "rs")
+table_paramRec <- flextable(paramRec, cwidth = c(.8,.9,.9,.9))
+
+table_paramRec <-  set_caption(table_paramRec, caption = "Table 21. Parameter recovery.")
+table_paramRec <- fontsize(table_paramRec, size = 8, part = "all")
+table_paramRec
+```
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE, out.width=200 }
+plot_scatter_dist<- function(x, y, xlab = "", ylab = "", title ="", xlim =c(min(y),max(y)),ylim =c(min(y),max(y)), colDot = "black", alpha, plotLab = "", plotLabY= 1.5, plotLabX = -0.1){
+  #
+  
+  par(fig=c(0,0.8,0,0.8), mar = c(5, 4, 1, 2)+0.1)
+  plot(x,y,
+       xlim = xlim,
+       ylim = ylim,
+       xlab = xlab,
+       ylab = ylab,
+       col = colDot,
+  )
+  text(x = plotLabX, y = plotLabY, plotLab,xpd=NA, cex = 1.5 )
+  abline(0,1)
+  abline(v = mean(x), lty = 3)
+  abline(h = mean(y), lty = 3)
+  abline(lm(x~y), lty = 2, col= "red", lwd = 2)
+  par(fig=c(0,0.8,0.5,1), new=TRUE, mar = c(5, 4, 1, 2)+0.1)
+  plot(density(x)$x, density(x)$y,
+       type = "l",
+       xlab = "",
+       ylab = "",
+       bty="n",
+       xaxt="n",
+       yaxt="n",
+       xlim =xlim )
+  abline(v = mean(x), lty = 3)
+  par(fig=c(0.55,1,0,0.8), new=TRUE, mar = c(5, 4, 1, 2)+0.1)
+  plot(density(y)$y, density(y)$x,
+       ylab = "",
+       xlab ="",
+       bty="n",
+       main = "",
+       type = "l",
+       yaxt="n",
+       xaxt="n",
+       ylim =ylim )
+  abline(h = mean(y), lty = 3)
+  
+  mtext(title, side=3, outer=TRUE, line=-1.3, cex = 1.5)
+  
+}
+
+#Robber
+robberCol <- rgb(red = .5, green = .5,blue = .5, alpha = .5)
+factoryCol <- rgb(red = .9, green = .5,blue = .1, alpha = .5)
+fullCol <- rgb(red = .5,green = .5,blue = .7, alpha = .5)
+
+plot_scatter_dist(x = mu_paramRec[,1],
+                  y = mu_paramRec[,2],
+                  xlab = expression(Generative~mu[0]),
+                  ylab = expression(Recovered~mu[0]),
+                  title = "Robber Task",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "A",
+                  colDot = robberCol)
+
+plot_scatter_dist(x = mu_paramRec[,3],
+                  y = mu_paramRec[,4],
+                  xlab = expression(Generative~p) ,
+                  ylab = expression(Recovered~p),
+                  title ="Factory task",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "B",
+                  colDot = factoryCol)
+
+plot_scatter_dist(x = mu_paramRec[,5],
+                  y = mu_paramRec[,6],
+                  xlab = expression(Generative~mu[0]),
+                  ylab = expression(Recovered~mu[0]),
+                  title = expression(1-prior~+~Factory~ActBias),
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "C",
+                  colDot = fullCol)
+
+
+
+plot_scatter_dist(x = sigmaRel_paramRec[,1], 
+                  y = sigmaRel_paramRec[,2],
+                  xlab = expression(Generative~sigma[0]^2),
+                  ylab = expression(Recovered~sigma[0]^2),
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "D",
+                  colDot = robberCol)
+
+plot_scatter_dist(x = invT_paramRec[,3],
+                  y = invT_paramRec[,4],
+                  xlab = expression(Generative~tau),
+                  ylab = expression(Recovered~tau),
+                  xlim = c(0,1.5),
+                  ylim = c(0,1.5),
+                  plotLab = "E",
+                  plotLabX = -(1.5/10), 
+                  plotLabY = 1.5+1.5/2,
+                  colDot =  factoryCol)
+
+plot_scatter_dist(x = sigmaRel_paramRec[,3],
+                  y = sigmaRel_paramRec[,4],
+                  xlab = expression(Generative~sigma[0]^2),
+                  ylab = expression(Recovered~sigma[0]^2),
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "F",
+                  colDot =  fullCol)
+
+plot_scatter_dist(x = invT_paramRec[,1],
+                  y = invT_paramRec[,2],
+                  xlab = expression(Generative~tau),
+                  ylab = expression(Recovered~tau),
+                  xlim = c(0,1.5),
+                  ylim = c(0,1.5),
+                  plotLab = "G",
+                  plotLabX = -(1.5/10),
+                  plotLabY = 1.5+1.5/2,
+                  colDot = robberCol)
+
+plot_scatter_dist(x = actBias_paramRec[,1],
+                  y = actBias_paramRec[,2],
+                  xlab = expression(Generative~ActBias),
+                  ylab = expression(Recovered~ActBias),
+                  xlim = c(-1,1),
+                  ylim = c(-1,1),
+                  plotLab = "H",
+                  plotLabX = -1.2, 
+                  plotLabY = 1+2/2,
+                  colDot =  factoryCol)
+
+plot_scatter_dist(x = invT_paramRec[,5], 
+                  y = invT_paramRec[,6],
+                  xlab = expression(Generative~tau^R),
+                  ylab = expression(Recovered~tau^R),
+                  xlim = c(0,1.5),
+                  ylim = c(0,1.5),
+                  plotLab = "I",
+                  plotLabX = -(1.5/10),
+                  plotLabY = 1.5+1.5/2,
+                  colDot = fullCol)
+
+
+plot_scatter_dist(x = 0.01*exp(fullBayesMSLinWSim[,4]), 
+                  y = 0.01*exp(fullBayesMSLinWObs[,4]),
+                  xlab = expression(Generative~tau^F),
+                  ylab = expression(Recovered~tau^F),
+                  xlim = c(0,1.5),
+                  ylim = c(0,1.5),
+                  plotLab = "J",
+                  plotLabX = -(1.5/10),
+                  plotLabY = 1.5+1.5/2,
+                  colDot = fullCol)
+
+plot_scatter_dist(x = actBias_paramRec[,3], 
+                  y = actBias_paramRec[,4],
+                  xlab = expression(Generative~ActBias),
+                  ylab = expression(Recovered~ActBias),
+                  xlim = c(-1,1),
+                  ylim = c(-1,1),
+                  plotLab = "K",
+                  plotLabX = -1.2,
+                  plotLabY = 1+2/2,
+                  colDot = fullCol)
+
+
+roundingFig6 <- 4
+```
+
+
+```{r load_paramsRecovery_params block2,echo=FALSE, message=FALSE, warning=FALSE}
+
+
+robber2BayesMSObsHBI <- readMat("computational_models/Simulations/confusionMatrix/robber2/basicFit/bayes/hbi_fitsim_prior.mat")
+robber2BayesMSObs <- robber2BayesMSObsHBI$cbm[[5]][[1]][[1]][[1]]
+factory2BayesMSObsHBI <- readMat("computational_models/Simulations/confusionMatrix/factory2/augmented/2Lapse/hbi_fitSim_2lapse.mat")
+factory2BayesMSObs <- factory2BayesMSObsHBI$cbm[[5]][[1]][[1]][[1]]
+full2BayesMSLinWObsHBI <-  readMat("computational_models/Simulations/confusionMatrix/full2/1prior/hbi_fitsim_1prior.mat")
+full2BayesMSLinWObs <- full2BayesMSLinWObsHBI$cbm[[5]][[1]][[1]][[1]]
+
+robber2BayesMSSimHBI <- readMat("computational_models/Simulations/confusionMatrix/robber2/basicFit/bayes/all_sim_data_bayes.mat")
+factory2BayesMSSimHBI <- readMat("computational_models/Simulations/confusionMatrix/factory2/augmented/2Lapse/all_sim_data_2lapse.mat")
+full2BayesMSLinWSimHBI <- readMat("computational_models/Simulations/confusionMatrix/full2/1prior/all_sim_data_1prior.mat")
+
+robber2BayesMSSim<-matrix(nrow = length(full2BayesMSLinWSimHBI$data), ncol = 3)
+factory2BayesMSSim<-matrix(nrow = length(full2BayesMSLinWSimHBI$data), ncol = 4)
+full2BayesMSLinWSim<-matrix(nrow = length(full2BayesMSLinWSimHBI$data), ncol = 5)
+
+for (subj in 1:length(fullBayesMSLinWSimHBI$data)) {
+  robber2BayesMSSim[subj,] <- robber2BayesMSSimHBI$data[[subj]][[1]][[7]]
+  factory2BayesMSSim[subj,] <- factory2BayesMSSimHBI$data[[subj]][[1]][[7]]
+  full2BayesMSLinWSim[subj,] <- full2BayesMSLinWSimHBI$data[[subj]][[1]][[8]]
+}
+
+
+mu_paramRec <- matrix(nrow =  nrow(robber2BayesMSObs), ncol = 6)
+
+for (subj in 1:nrow(robberBayesMSObs)) {
+  mu_paramRec[subj,1] <- logistic(robber2BayesMSSim[subj,1])
+  mu_paramRec[subj,2] <- logistic(robber2BayesMSObs[subj,1])
+  mu_paramRec[subj,3] <- logistic(factory2BayesMSSim[subj,1])
+  mu_paramRec[subj,4] <- logistic(factory2BayesMSObs[subj,1])
+  mu_paramRec[subj,5] <- logistic(full2BayesMSLinWSim[subj,1])
+  mu_paramRec[subj,6] <- logistic(full2BayesMSLinWObs[subj,1])
+}
+
+sigmaRel_paramRec <- matrix(nrow =  nrow(robber2BayesMSSim), ncol = 6)
+
+for (subj in 1:nrow(robberBayesMSObs)) {
+  sigmaRel_paramRec[subj,1] <-  logistic(robber2BayesMSSim[subj,2])
+  sigmaRel_paramRec[subj,2] <-  logistic(robber2BayesMSObs[subj,2])
+  sigmaRel_paramRec[subj,3] <-  logistic(factory2BayesMSSim[subj,2])
+  sigmaRel_paramRec[subj,4] <-  logistic(factory2BayesMSObs[subj,2])
+  sigmaRel_paramRec[subj,5] <-  logistic(full2BayesMSLinWSim[subj,2])
+  sigmaRel_paramRec[subj,6] <-  logistic(full2BayesMSLinWObs[subj,2])
+}
+
+invT_paramRec <- matrix(nrow =  nrow(robberBayesMSSim), ncol = 6)
+
+for (subj in 1:nrow(robberBayesMSSim)) {
+  invT_paramRec[subj,1] <- 0.01*(exp(robber2BayesMSSim[subj,3]))
+  invT_paramRec[subj,2] <- 0.01*(exp(robber2BayesMSObs[subj,3]))
+  invT_paramRec[subj,3] <- 0.01*(exp(factory2BayesMSSim[subj,3]))
+  invT_paramRec[subj,4] <- 0.01*(exp(factory2BayesMSObs[subj,3]))
+  invT_paramRec[subj,5] <- 0.01*(exp(full2BayesMSLinWSim[subj,3]))
+  invT_paramRec[subj,6] <- 0.01*(exp(full2BayesMSLinWObs[subj,3]))
+}
+
+actBias_paramRec <- matrix(nrow =  nrow(robberBayesMSSim), ncol = 4)
+for (subj in 1:nrow(robberBayesMSSim)) {
+  actBias_paramRec[subj,1] <- (2*(logistic(factory2BayesMSSim[subj,4]))-1)
+  actBias_paramRec[subj,2] <- (2*(logistic(factory2BayesMSObs[subj,4]))-1)
+  actBias_paramRec[subj,3] <- (2*(logistic(full2BayesMSLinWSim[subj,4]))-1)
+  actBias_paramRec[subj,4] <- (2*(logistic(full2BayesMSLinWObs[subj,4]))-1)
+}
+
+```
+
+
+```{r table_paramrec  block2,  echo=FALSE, message=FALSE, warning=FALSE}
+paramRecRMu <- c(identicalCorr(mu_paramRec[,1],mu_paramRec[,2]),
+                 cor(mu_paramRec[,1],mu_paramRec[,2], method = "spearman"))
+
+paramRecFMu <- c(identicalCorr(mu_paramRec[,3],mu_paramRec[,4]),
+                    cor(mu_paramRec[,3],mu_paramRec[,4], method = "spearman"))
+
+paramRecFullMu <- c(identicalCorr(mu_paramRec[,5],mu_paramRec[,6]),
+                    cor(mu_paramRec[,5],mu_paramRec[,6], method = "spearman"))
+
+paramRecRSigmaRel <- c(identicalCorr(sigmaRel_paramRec[,1],sigmaRel_paramRec[,2]),
+                       cor(sigmaRel_paramRec[,1],sigmaRel_paramRec[,2], method ="spearman"))
+
+paramRecFSigmaRel <- c(identicalCorr(sigmaRel_paramRec[,3],sigmaRel_paramRec[,4]),
+                       cor(sigmaRel_paramRec[,3],sigmaRel_paramRec[,4], method ="spearman"))
+
+paramRecFullSigmaRel <- c(identicalCorr(sigmaRel_paramRec[,5],sigmaRel_paramRec[,6]),
+                          cor(sigmaRel_paramRec[,5],sigmaRel_paramRec[,6], method ="spearman"))
+
+paramRecRInvT <- c(identicalCorr(invT_paramRec[,1],invT_paramRec[,2]),
+                   cor(invT_paramRec[,1],invT_paramRec[,2], method ="spearman"))
+
+paramRecFInvT <- c(identicalCorr(invT_paramRec[,3],invT_paramRec[,4]),
+                   cor(invT_paramRec[,3],invT_paramRec[,4], method ="spearman"))
+
+paramRecFullInvT <- c(identicalCorr(invT_paramRec[,5],invT_paramRec[,6]),
+                      cor(invT_paramRec[,5],invT_paramRec[,6], method ="spearman"))
+
+paramRec<- rbind(paramRecRMu,paramRecFMu, paramRecFullMu,
+                 paramRecRSigmaRel, paramRecFSigmaRel, paramRecFullSigmaRel,
+                 paramRecRInvT ,paramRecFInvT,paramRecFullInvT)
+
+paramRec<- round(paramRec, 4)
+paramRec<- cbind(c(rep("Mu",3),
+                   rep("Sigma",3),
+                   rep("InvT",2),c("InvT R")),
+                 c(rep(c("Robber", "Factory", "Both Tasks"),3)),
+                 paramRec)
+paramRec<- rbind(paramRec, c("InvT F", "Both Tasks",
+                             round(identicalCorr(0.01*exp(fullBayesMSLinWSim[,4]),
+                                                 0.01*exp(fullBayesMSLinWObs[,4])),4),
+                             round(cor(0.01*exp(fullBayesMSLinWSim[,4]),
+                                       0.01*exp(fullBayesMSLinWObs[,4]), method ="spearman"), 4)))
+
+paramRec<- rbind(paramRec, c("ActBias","Factory",
+                             round(identicalCorr(actBias_paramRec[,1], 
+                                                 actBias_paramRec[,2]),4),
+                             round(cor(actBias_paramRec[,1],
+                                       actBias_paramRec[,2], 
+                                       method ="spearman"), 4)))
+
+paramRec<- rbind(paramRec, c("ActBias","Both Tasks",
+                             round(identicalCorr(actBias_paramRec[,3], 
+                                                 actBias_paramRec[,4]),4),
+                             round(cor(actBias_paramRec[,3],
+                                       actBias_paramRec[,4], 
+                                       method ="spearman"), 4)))
+
+paramRec<- as.data.frame(paramRec)
+```
+
+```{r table_parameterRecovery block 2, echo = FALSE}
+names(paramRec) <- c("Parameter","Task","R2", "rs")
+table_paramRec <- flextable(paramRec, cwidth = c(.8,.9,.9,.9))
+
+table_paramRec <-  set_caption(table_paramRec, caption = "Table 22. Parameter recovery.")
+table_paramRec <- fontsize(table_paramRec, size = 8, part = "all")
+table_paramRec
+```
+
+```{r,echo=FALSE, message=FALSE, warning=FALSE, out.width=200 }
+plot_scatter_dist<- function(x, y, xlab = "", ylab = "", title ="", xlim =c(min(y),max(y)),ylim =c(min(y),max(y)), colDot = "black", alpha, plotLab = "", plotLabY= 1.5, plotLabX = -0.1){
+  #
+  
+  par(fig=c(0,0.8,0,0.8), mar = c(5, 4, 1, 2)+0.1)
+  plot(x,y,
+       xlim = xlim,
+       ylim = ylim,
+       xlab = xlab,
+       ylab = ylab,
+       col = colDot,
+  )
+  text(x = plotLabX, y = plotLabY, plotLab,xpd=NA, cex = 1.5 )
+  abline(0,1)
+  abline(v = mean(x), lty = 3)
+  abline(h = mean(y), lty = 3)
+  abline(lm(x~y), lty = 2, col= "red", lwd = 2)
+  par(fig=c(0,0.8,0.5,1), new=TRUE, mar = c(5, 4, 1, 2)+0.1)
+  plot(density(x)$x, density(x)$y,
+       type = "l",
+       xlab = "",
+       ylab = "",
+       bty="n",
+       xaxt="n",
+       yaxt="n",
+       xlim =xlim )
+  abline(v = mean(x), lty = 3)
+  par(fig=c(0.55,1,0,0.8), new=TRUE, mar = c(5, 4, 1, 2)+0.1)
+  plot(density(y)$y, density(y)$x,
+       ylab = "",
+       xlab ="",
+       bty="n",
+       main = "",
+       type = "l",
+       yaxt="n",
+       xaxt="n",
+       ylim =ylim )
+  abline(h = mean(y), lty = 3)
+  
+  mtext(title, side=3, outer=TRUE, line=-1.3, cex = 1.5)
+  
+}
+plot_scatter_dist(x = mu_paramRec[,1],
+                  y = mu_paramRec[,2],
+                  xlab = expression(Generative~mu[0]),
+                  ylab = expression(Recovered~mu[0]),
+                  title = "Robber Task",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "A",
+                  colDot = rgb(red = .5,green = .5,blue = .5, alpha = .5))
+
+plot_scatter_dist(x = mu_paramRec[,3],
+                  y = mu_paramRec[,4],
+                  xlab = expression(Generative~mu[0]) ,
+                  ylab = expression(Recovered~mu[0]),
+                  title ="Factory task",
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "B",
+                  colDot =  rgb(red = .9,green = .5,blue = .1, alpha = .5))
+
+plot_scatter_dist(x = mu_paramRec[,5],
+                  y = mu_paramRec[,6],
+                  xlab = expression(Generative~mu[0]),
+                  ylab = expression(Recovered~mu[0]),
+                  title = expression(1-prior~+~Factory~ActBias),
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "C",
+                  colDot = rgb(red = .5,green = .5,blue = .7, alpha = .5))
+
+
+plot_scatter_dist(x = sigmaRel_paramRec[,1], y = sigmaRel_paramRec[,2],
+                  xlab = expression(Generative~sigma[0]^2),
+                  ylab = expression(Recovered~sigma[0]^2),
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "D",
+                  #plotLabX = -0.03,
+                  #plotLabY = .45,
+                  colDot = rgb(red = .5,green = .5,blue = .5, alpha = .5))
+
+plot_scatter_dist(x = sigmaRel_paramRec[,3],
+                  y = sigmaRel_paramRec[,4],
+                  xlab = expression(Generative~sigma[0]^2),
+                  ylab = expression(Recovered~sigma[0]^2),
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "E",
+                  #plotLabX = -0.03,
+                  #plotLabY = .45,
+                  colDot = rgb(red = .9,green = .5,blue = .1, alpha = .5))
+
+
+plot_scatter_dist(x = sigmaRel_paramRec[,5],
+                  y = sigmaRel_paramRec[,6],
+                  xlab = expression(Generative~sigma[0]^2),
+                  ylab = expression(Recovered~sigma[0]^2),
+                  xlim = c(0,1),
+                  ylim = c(0,1),
+                  plotLab = "F",
+                  #plotLabX = -0.03, 
+                  #plotLabY = .45,
+                  colDot =  rgb(red = .5,green = .5,blue = .7, alpha = .5))
+
+
+plot_scatter_dist(x = invT_paramRec[,1],
+                  y = invT_paramRec[,2],
+                  xlab = expression(Generative~tau),
+                  ylab = expression(Recovered~tau),
+                  #title = "Robber Task",
+                  xlim = c(0,1.5),
+                  ylim = c(0,1.5),
+                  plotLab = "G",
+                  plotLabX = -(1.5/10),
+                  plotLabY = 1.5+1.5/2,
+                  colDot = rgb(red = .5,green = .5,blue = .5, alpha = .5))
+
+plot_scatter_dist(x = invT_paramRec[,3],
+                  y = invT_paramRec[,4],
+                  xlab = expression(Generative~tau),
+                  ylab = expression(Recovered~tau),
+                  xlim = c(0,1.5),
+                  ylim = c(0,1.5),
+                  plotLab = "H",
+                  plotLabX = -(1.5/10), 
+                  plotLabY = 1.5+1.5/2,
+                  colDot =  rgb(red = .9,green = .5,blue = .1, alpha = .5))
+
+
+plot_scatter_dist(x = invT_paramRec[,5], 
+                  y = invT_paramRec[,6],
+                  xlab = expression(Generative~tau^R),
+                  ylab = expression(Recovered~tau^R),
+                  xlim = c(0,1.5),
+                  ylim = c(0,1.5),
+                  plotLab = "I",
+                  plotLabX = -(1.5/10),
+                  plotLabY = 1.5+1.5/2,
+                  colDot = rgb(red = .5,green = .5,blue = .7, alpha = .3))
+
+plot_scatter_dist(x = actBias_paramRec[,1],
+                  y = actBias_paramRec[,2],
+                  xlab = expression(Generative~ActBias),
+                  ylab = expression(Recovered~ActBias),
+                  xlim = c(-1,1),
+                  ylim = c(-1,1),
+                  plotLab = "J",
+                  plotLabX = -1.2, 
+                  plotLabY = 1+2/2,
+                  colDot =  rgb(red = .9,green = .5,blue = .1, alpha = .5))
+
+
+plot_scatter_dist(x = 0.01*exp(fullBayesMSLinWSim[,4]), 
+                  y = 0.01*exp(fullBayesMSLinWObs[,4]),
+                  xlab = expression(Generative~tau^F),
+                  ylab = expression(Recovered~tau^F),
+                  xlim = c(0,1.5),
+                  ylim = c(0,1.5),
+                  plotLab = "K",
+                  plotLabX = -(1.5/10),
+                  plotLabY = 1.5+1.5/2,
+                  colDot = rgb(red = .5,green = .5,blue = .7, alpha = .3))
+
+plot_scatter_dist(x = actBias_paramRec[,3], 
+                  y = actBias_paramRec[,4],
+                  xlab = expression(Generative~ActBias),
+                  ylab = expression(Recovered~ActBias),
+                  xlim = c(-1,1),
+                  ylim = c(-1,1),
+                  plotLab = "L",
+                  plotLabX = -1.2,
+                  plotLabY = 1+2/2,
+                  colDot = rgb(red = .5,green = .5,blue = .7, alpha = .3))
+
+
+roundingFig6 <- 4
+```
+
+# Supplementary methods
+
+
+# Pilot results

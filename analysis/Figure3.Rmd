@@ -1,0 +1,280 @@
+---
+title: "Figure 3"
+author: "Tobias Granwald"
+date: "2025-02-18"
+output: html_document
+---
+
+# Setup
+
+```{r create figure dir, echo=FALSE, warning=FALSE, message=FALSE}
+mainDir <- getwd()
+subDir <- "figures"
+#check if the dir already exists if not create it
+ifelse(!dir.exists(file.path(mainDir, subDir)), dir.create(file.path(mainDir, subDir)), FALSE)
+```
+## Functions
+```{r}
+#plot function
+plotModelData<- function(data, main, xmin, xmax, textPos = -100, ifLegend = T, ifXLab = T,ifYLab = T, ifYAxt = T){
+  
+  colModelLine <- "tomato2"
+    
+  colSD<- rgb(red = .5, green = 0.5, blue = 0.5, alpha= 0.3)
+  
+  colSD2<- rgb(red = 1, green = 0.4, blue = 0.3, alpha= 0.4)
+  
+  plot(data[,1], 
+       data[,4],
+       type = "l",
+       xaxt="n",
+       yaxt = "n",
+       ylim = c(0,1),
+       xlim = c(xmin, xmax),
+       ylab = " ",
+       main = "",
+       cex.main = 1.3,
+       lwd =2,
+       bty = "o",
+       family = "Arial")
+  
+  if (ifYAxt) {
+    axis(2, cex.axis = 2, tck = .02, las = 1)
+  }
+  
+  if (ifXLab) {
+    mtext("Offer - Cost", side = 1, cex = 2, outer = F, line = 3.5, family = "Arial")
+    axis(1, at= seq(xmin, xmax, by = 50), cex.axis = 2, tck = .02)
+  }
+  if (ifYLab) {
+    mtext("P('Active')", side = 2, cex = 2, outer = F, line = 3.8, family = "Arial")
+  }
+  
+  text(x = xmax+ textPos,y = .1,labels = main, cex = 2)
+  
+  polygon(c(data[,1], rev(data[,1])),
+          c((data[,4] + data[,5]), rev((data[,4]- data[,5]))),
+          col = colSD,
+          border = "white")
+
+    lines(data[,1], 
+        data[,4],
+        type = "l",
+        col = "black",
+        lwd = 2,
+        cex = 1.3)
+  lines(data[,1], 
+        data[,6],
+        type = "l",
+        col = colModelLine,
+        lwd = 2,
+        cex = 1.3)
+  
+  
+  points(data[,1], 
+         data[,4],
+         col = "darkgray",
+         pch = 19,
+         cex = 2)
+  points(data[,1], 
+         data[,4],
+         col = "black",
+         cex = 2,
+         lwd = 1.5)
+  if (ifLegend) {
+    legend(x = xmax-100, 0.45, legend=c("Data", "Model"),
+         col=c("black", colModelLine), lty = 1, cex=2, lwd = 4,
+         bty = "n")
+
+  }
+  
+}
+# aggregate based on unique offer-cost combinations 
+aggregateDataModel <- function(data, costList){
+  agg_data_model_cost <- matrix(nrow = 20, ncol = 7)
+  
+  for (i in 1:20) {
+    agg_data_model_cost[i,1]<- mean(data[data$cost==costList[i] & data$offers==offerList[i],]$offers)- mean(data[data$cost==costList[i] & data$offers==offerList[i],]$cost)
+    agg_data_model_cost[i,2]<- mean(data[data$cost==costList[i] & data$offers==offerList[i],]$offers)
+    agg_data_model_cost[i,3]<- mean(data[data$cost==costList[i] & data$offers==offerList[i],]$cost)
+    agg_data_model_cost[i,4]<- mean(data[data$cost==costList[i] & data$offers==offerList[i],]$act)
+    agg_data_model_cost[i,5]<- sd(data[data$cost==costList[i] & data$offers==offerList[i],]$act)
+    agg_data_model_cost[i,6]<- mean(data[data$cost==costList[i] & data$offers==offerList[i],]$simActFull1Prior)
+    agg_data_model_cost[i,7]<- sd(data[data$cost==costList[i] & data$offers==offerList[i],]$simActFull1Prior)
+  }
+  return(agg_data_model_cost)
+}
+```
+
+
+## Load data
+
+```{r load_data, echo=FALSE, message=FALSE,warning=FALSE}
+D <- read.delim("data/extractedData.csv", header = TRUE, sep = ",")
+
+RFull_agg_data_model <- read.delim("computational_models/Simulations/modelAndData/full1/full_choice_1prior_FActBias_R.csv", header = F, sep = ",")
+FFull_agg_data_model <- read.delim("computational_models/Simulations/modelAndData/full1/full_choice_1prior_FActBias_F.csv", header = F, sep = ",")
+
+RSimData_agg_data_model <- read.delim("computational_models/Simulations/modelAndData/full1/sim_choice_1prior_FActBias_R.csv", header = F, sep = ",")
+FSimData_agg_data_model <- read.delim("computational_models/Simulations/modelAndData/full1/sim_choice_1prior_FActBias_F.csv", header = F, sep = ",")
+```
+
+```{r sort_choice_data,echo=FALSE, message=FALSE, warning=FALSE}
+DChoice <- D[D$category=="choice", ]
+
+DChoice <- DChoice[DChoice$response!="null", ]
+
+DChoice$act <- as.numeric(DChoice$act)
+
+DChoiceRobber <- DChoice[DChoice$task=="robber" , ]
+DChoiceRobber1 <- DChoiceRobber[DChoiceRobber$trial<60, ]
+
+DChoiceFactory <- DChoice[DChoice$task=="factory" , ]
+DChoiceFactory1 <- DChoiceFactory[DChoiceFactory$trial<60, ]
+
+listSubjID <- unique(DChoice$subjID_anon)
+```
+
+## Aggregate data
+
+
+### Robber task
+
+```{r}
+DChoiceRobber1$simActFull1Prior <- NA
+
+for (subj in 1:length(unique(DChoiceRobber1$subjID_anon))) {
+  DChoiceRobber1[DChoiceRobber1$subjID_anon==subj,]$simActFull1Prior <- RSimData_agg_data_model[,subj]
+}
+
+offerList<-sort(round(50/c(2:20/20, 2)))
+offerList[6]<- offerList[6]+1 # because of differences in how JavaScript and R handles rounding we need to add 1 here
+
+costListR1 <- rep(75,20)
+costListR2 <- round((offerList*0.05)+40+0.01)
+costListR3 <- round((offerList*0.15)+10+0.01)
+
+RFull_agg_data_model_cost1 <-  aggregateDataModel(DChoiceRobber1, costListR1)
+RFull_agg_data_model_cost2 <-  aggregateDataModel(DChoiceRobber1, costListR2)
+RFull_agg_data_model_cost3 <-  aggregateDataModel(DChoiceRobber1, costListR3)
+```
+
+### Factory task
+
+```{r}
+DChoiceFactory1$simActFull1Prior <- NA
+
+for (subj in 1:length(unique(DChoiceFactory1$subjID_anon))) {
+  DChoiceFactory1[DChoiceFactory1$subjID_anon==subj,]$simActFull1Prior <- FSimData_agg_data_model[,subj]
+}
+
+offerList<-sort(round(50/c(2:20/20, 2)))
+offerList[6]<- offerList[6]+1 # because of differences in how JavaScript and R handles rounding we need to add 1 here
+
+costListF1 <- rep(100,20)
+costListF2 <- round((offerList*0.05)+50+0.01)
+costListF3 <- round((offerList*0.1)+0.01)
+
+FFull_agg_data_model_cost1 <-  aggregateDataModel(DChoiceFactory1, costListF1)
+FFull_agg_data_model_cost2 <-  aggregateDataModel(DChoiceFactory1, costListF2)
+FFull_agg_data_model_cost3 <-  aggregateDataModel(DChoiceFactory1, costListF3)
+```
+
+
+# Plot Fig. 3A
+
+```{r Plot Fig. 3A, echo=FALSE, message=FALSE, warning=FALSE}
+png(filename = "figures/Fig3a.png",width = 615, height = 1000)
+par(mfrow = c(3,1), mar= c(1,5,0,2), oma = c(4,2,5,0))
+
+plotModelData(RFull_agg_data_model_cost1, 
+              "Cost = 75",
+              xmin = -50, 450,
+              textPos = -50, 
+              T,F,F)
+mtext(text = "Robber Task", side = 3,
+      family= "Arial", cex = 3, line = 2, font = 2)
+
+plotModelData(RFull_agg_data_model_cost2,
+              "Cost = Offer*0.05+40",
+              -50, 450,
+              textPos = -100,
+              F,F,T)
+plotModelData(RFull_agg_data_model_cost3,
+              "Cost = Offer*0.15+10",
+              -50, 450,
+              textPos = -100,
+              ifLegend = F, ifXLab = T, ifYLab = F)
+dev.off()
+```
+# Plot Fig. 3B
+
+```{r Plot Fig. 3A, echo=FALSE, message=FALSE, warning=FALSE}
+png(filename = "figures/Fig3b.png", width = 615, height = 1000)
+par(mfrow = c(3,1), mar = c(1,2,0,5), oma = c(4,0,5,0))
+
+plotModelData(FFull_agg_data_model_cost1, 
+              "Cost = 100",
+              xmin = -50, 450,
+              textPos = -50, 
+              T,F,F)
+
+mtext(text = "Factory Task", side = 3, 
+      family = "Arial", cex = 3, line = 2, font = 2)
+
+plotModelData(FFull_agg_data_model_cost2,
+              "Cost = Offer*0.05+50",
+              -50, 450,
+              textPos = -100, 
+              F,F,F)
+plotModelData(FFull_agg_data_model_cost3,
+              "Cost = Offer*0.1",
+              -50, 450,
+              textPos = -70, 
+              F,T,F)
+dev.off()
+```
+# Plot Fig. 3 Full
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, out.width=300}
+png(filename = "figures/Fig3Full.png",width = 615*2, height = 1000)
+par(mfrow = c(3,2), mar= c(1,2,0,2), oma = c(4,5,5,0))
+
+plotModelData(RFull_agg_data_model_cost1, 
+              "Cost = 75",
+              xmin = -50, 450,
+              textPos = -50, T,F,F)
+mtext(text = "Robber Task", side = 3,
+      family= "Arial", cex = 3, line = 2, font = 2)
+
+plotModelData(FFull_agg_data_model_cost1, 
+              "Cost = 100",
+              xmin = -50, 450,
+              textPos = -50, T,F,F,F)
+mtext(text = "Factory Task", side = 3,
+      family= "Arial", cex = 3, line = 2, font = 2)
+
+plotModelData(RFull_agg_data_model_cost2,
+              "Cost = Offer*0.05+40",
+              -50, 450,
+              textPos = -100, F,F,T)
+
+plotModelData(FFull_agg_data_model_cost2,
+              "Cost = Offer*0.05+50", 
+              -50, 450,
+              textPos = -100, 
+              F,F,F,F)
+
+plotModelData(RFull_agg_data_model_cost3,
+              "Cost = Offer*0.15+10",
+              -50, 450,
+              textPos = -100,
+              ifLegend = F, ifXLab = T, ifYLab = F)
+
+plotModelData(FFull_agg_data_model_cost3,
+              "Cost = Offer*0.1",
+              -50, 450,
+              textPos = -70,
+              F,T,F,F)
+dev.off()
+```

@@ -1,0 +1,1297 @@
+---
+title: "Figure 1_manus"
+author: "Tobias Granwald"
+date: "2025-02-18"
+output: html_document
+---
+
+
+# C and D
+
+```{r value_of_actionPlots, echo=FALSE, message=FALSE, warning=FALSE}
+offers <- round(50/c(2:20/20,2))
+
+lineColors <- c("#4426B6","#2C5CD3","#2CB0D3")
+
+png(file="figures/figure1_C_robberValue.png",
+  width=600, height=1400)
+
+par(mfrow=c(2,1), oma = c(0,4,7,0))
+par(mar= c(8,5,0,0.5)+0.1)
+plot(offers, offers-75,
+     main = "",
+     cex.main = 3,
+     xlab = "",
+     ylab = "",
+     type = "l",
+     cex.lab = 3,
+     cex.axis = 2.5,
+     lwd = 3,
+     ylim = c(-100, 500),
+     col = lineColors[1],
+     tck = .01)
+abline(h= 0, col = "red", lwd = 3)
+points(x = offers, y=offers-75, col = lineColors[1], cex=2, lwd= 2, pch= 19)
+points(x = offers, y=offers-75, col = "#B4A8E1", cex=2, lwd= 1, pch= 1)
+
+mtext("Offer",
+      side = 1,
+      outer = F,
+      cex = 3.6,
+      line = 3.3,
+      family = "Arial")
+mtext("Value of Choice",
+      side = 2,
+      outer = F,
+      cex = 3.6,
+      line = 3.2,
+      family = "Arial")
+
+mtext("(Money before meeting the robber)",
+      side = 1,
+      outer = F,
+      cex = 2.5,
+      line = 5.2,
+      family = "Arial")
+#mtext(ylab="Value of action", mgp=c(2.5,1,0),cex.lab=3)
+
+lines(x = offers, y=round(offers-(offers*0.15)+10), type = "l", col = lineColors[2], lwd = 3)
+points(x = offers, y=round(offers-(offers*0.15)+10), col = lineColors[2], cex=2, lwd= 2, pch= 19)
+points(x = offers, y=round(offers-(offers*0.15)+10), col = "#BFCEF1", cex=2, lwd= 1, pch= 1)
+lines(x = offers, y=round(offers-(offers*0.05)+40), type = "l", col = lineColors[3], lwd = 3)
+points(x = offers, y=round(offers-(offers*0.05)+40), col = lineColors[3], cex=2, lwd = 2, pch= 19)
+points(x = offers, y=round(offers-(offers*0.05)+40), col = "#bfe7f1", cex=2, lwd = 1)
+
+
+legend("topleft",legend=c("Active:Cost = 0%+75", "Active:Cost = 15%+10", "Active:Cost = 5%+40", "Passive"),
+       col=c(lineColors, "red"), lty = 1,lwd = 3, cex=2.1,  bty = "n")
+
+text(x = -90, y = 600, "C",xpd=NA ,cex = 6, font = 2, family = "Arial", outer= F)
+
+par(mar= c(8,5,0,0.5)+0.1)
+plot(-offers ,rep(-100,length(offers) ),
+     main = "",
+     cex.main = 3,
+     xlab = "",
+     ylab = "",
+     type = "l",
+     cex.lab = 3,
+     cex.axis = 2.5,
+     lwd = 3,
+     ylim = c(-500, 0),
+     col = lineColors[3],
+     tck = .01)
+lines(x = -offers, y=-((offers*0.1)+0), type = "l", col = lineColors[1], lwd = 3)
+points(x = -offers, y=-((offers*0.1)+0), col = lineColors[1], cex=2, lwd = 2, pch = 19)
+points(x = -offers, y=-((offers*0.1)+0), col = "#B4A8E1", cex=2, lwd= 1, pch= 1)
+
+lines(x = -offers, y=-((offers*0.05)+50), type = "l", col = lineColors[2], lwd = 3)
+lines(x=-offers, y=-offers, col = "red", lwd = 3)
+points(x = -offers, y=-((offers*0.05)+50), col = lineColors[2], cex=2, lwd = 2, pch = 19)
+points(x = -offers, y=-((offers*0.05)+50), col = "#BFCEF1", cex=2, lwd = 1, pch = 1)
+
+points(x = -offers, y=rep(-100,length(offers)), col = lineColors[3], cex=2, lwd = 2, pch = 19)
+points(x = -offers, y=rep(-100,length(offers)), col = "#bfe7f1", cex=2, lwd = 1, pch = 1)
+
+
+
+legend("bottomright",legend=c("Active:Cost = 10% + 0", "Active:Cost = 5% + 50","Active:Cost = 0% + 100", "Passive"),
+       col=c(lineColors, "red"), lty = 1, cex=2.1,lwd = 3, bty = "n")
+
+mtext("Offer",
+      side = 1,
+      outer = F,
+      cex = 3.6,
+      line = 3.3,
+      family = "Arial")
+mtext("Value of Choice",
+      side = 2,
+      outer = F,
+      cex = 3.6,
+      line = 3.2,
+      family = "Arial")
+
+mtext("(cost of machine breaking)",
+      side = 1,
+      outer = F,
+      cex = 2.5,
+      line = 5.2,
+      family = "Arial")
+text(x = -615, y = 75, "D",xpd=NA ,cex = 6, font = 2, family = "Arial", outer= F)
+
+dev.off()
+```
+
+
+
+# E and F
+
+```{r}
+F1SimData_data_bayes_basic <- read.delim("compuational_models/modelAndData/factory1/sim_choice_bayes_F1.csv", header = F, sep = ",")
+F1SimData_data_static_basic <- read.delim("compuational_models/Simulations/modelAndData/factory1/sim_choice_static_F1.csv", header = F, sep = ",")
+F1SimData_data_static2Bias_basic <- read.delim("compuational_models/Simulations/modelAndData/factory1/sim_choice_static2Bias_F1.csv", header = F, sep = ",")
+F1SimData_data_softMax_basic <- read.delim("compuational_models/Simulations/modelAndData/factory1/sim_choice_softmax_F1.csv", header = F, sep = ",")
+F1SimData_data_WSLS_basic <- read.delim("compuational_models/Simulations/modelAndData/factory1/sim_choice_wsls_F1.csv", header = F, sep = ",")
+
+
+DChoiceFactory1$simBasicBayes <- NA
+DChoiceFactory1$simBasicStaticThresh <- NA
+DChoiceFactory1$simBasicStaticThresh2Bias <- NA
+DChoiceFactory1$simBasicSoftMax <- NA
+DChoiceFactory1$simBasicWSLS <- NA
+
+
+for (subj in listSubjID) {
+  DChoiceFactory1[DChoiceFactory1$subjID_anon==subj, ]$simBasicBayes <- F1SimData_data_bayes_basic[,subj]
+  DChoiceFactory1[DChoiceFactory1$subjID_anon==subj, ]$simBasicStaticThresh <- F1SimData_data_static_basic[,subj]
+  DChoiceFactory1[DChoiceFactory1$subjID_anon==subj, ]$simBasicSoftMax <- F1SimData_data_softMax_basic[,subj]
+  DChoiceFactory1[DChoiceFactory1$subjID_anon==subj, ]$simBasicWSLS <- F1SimData_data_WSLS_basic[,subj]
+  DChoiceFactory1[DChoiceFactory1$subjID_anon==subj, ]$simBasicStaticThresh2Bias <- F1SimData_data_static2Bias_basic[,subj]
+}
+
+```
+
+
+
+````{r}
+
+list_probsF <- sort(unique(DChoiceFactory1$probWin))
+
+
+mean_act_probTrial1F <- matrix(nrow = length(list_probs), ncol = 8)
+mean_bayes_probTrial1F <- matrix(nrow = length(list_probs), ncol = 8)
+mean_static_probTrial1F <- matrix(nrow = length(list_probs), ncol = 8)
+
+for (i in 1:length(list_probsF)) {
+  
+  winprob_act_subjF <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  winprob_bayes_subjF <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  winprob_static_subjF <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  
+  for (n in 1:length(listSubjID)) {
+    
+    temp_winProbActF <- DChoiceFactory1[DChoiceFactory1$probWin==list_probsF[i] &
+                                        DChoiceFactory1$subjID==listSubjID[n], ]$act
+    
+    temp_winProbBayesF <- DChoiceFactory1[DChoiceFactory1$probWin==list_probsF[i] &
+                                          DChoiceFactory1$subjID==listSubjID[n], ]$simBasicBayes
+    
+    temp_winProbStaticF <- DChoiceFactory1[DChoiceFactory1$probWin==list_probsF[i] &
+                                           DChoiceFactory1$subjID==listSubjID[n], ]$simBasicStaticThresh2Bias
+    
+    
+    temp_length <- length(temp_winProbActF)
+    
+    winprob_act_subjF[n,1:temp_length] <- temp_winProbActF 
+    winprob_bayes_subjF[n,1:temp_length] <- temp_winProbBayesF 
+    winprob_static_subjF[n,1:temp_length] <- temp_winProbStaticF 
+  }
+  mean_act_probTrial1F[i,]<- apply(winprob_act_subjF, 2, mean, na.rm = TRUE)
+  mean_bayes_probTrial1F[i,]<- apply(winprob_bayes_subjF, 2, mean, na.rm = TRUE)
+  mean_static_probTrial1F[i,]<- apply(winprob_static_subjF, 2, mean, na.rm = TRUE)
+  
+}
+
+````
+
+
+
+```{r}
+D <- read.delim("data/extractedData.csv", header = TRUE, sep = ",")
+```
+
+```{r sort_choice_data,echo=FALSE, message=FALSE, warning=FALSE}
+DChoice <- D[D$category=="choice", ]
+
+DChoice <- DChoice[DChoice$response!="null", ]
+
+DChoice$act <- as.numeric(DChoice$act)
+
+DChoiceRobber <- DChoice[DChoice$task=="robber" , ]
+DChoiceRobber1 <- DChoiceRobber[DChoiceRobber$trial<60, ]
+DChoiceRobber2 <- DChoiceRobber[DChoiceRobber$trial>59, ]
+
+DChoiceFactory <- DChoice[DChoice$task=="factory" , ]
+DChoiceFactory1 <- DChoiceFactory[DChoiceFactory$trial<60, ]
+DChoiceFactory2 <- DChoiceFactory[DChoiceFactory$trial>59, ]
+
+listSubjID <- unique(DChoice$subjID_anon)
+```
+
+```{r}
+R1SimData_data_bayes_basic <- read.delim("compuational_models/Simulations/modelAndData/robber1/sim_choice_bayes_R1.csv", header = F, sep = ",")
+R1SimData_data_static_basic <- read.delim("compuational_models/Simulations/modelAndData/robber1/sim_choice_static_R1.csv", header = F, sep = ",")
+R1SimData_data_softMax_basic <- read.delim("compuational_models/Simulations/modelAndData/robber1/sim_choice_softmax_R1.csv", header = F, sep = ",")
+R1SimData_data_WSLS_basic <- read.delim("compuational_models/Simulations/modelAndData/robber1/sim_choice_wsls_R1.csv", header = F, sep = ",")
+
+
+DChoiceRobber1$simBasicBayes <- NA
+DChoiceRobber1$simBasicStaticThresh <- NA
+DChoiceRobber1$simBasicSoftMax <- NA
+DChoiceRobber1$simBasicWSLS <- NA
+
+
+for (subj in listSubjID) {
+  DChoiceRobber1[DChoiceRobber1$subjID_anon==subj, ]$simBasicBayes <- R1SimData_data_bayes_basic[,subj]
+  DChoiceRobber1[DChoiceRobber1$subjID_anon==subj, ]$simBasicStaticThresh <- R1SimData_data_static_basic[,subj]
+  DChoiceRobber1[DChoiceRobber1$subjID_anon==subj, ]$simBasicSoftMax <- R1SimData_data_softMax_basic[,subj]
+  DChoiceRobber1[DChoiceRobber1$subjID_anon==subj, ]$simBasicWSLS <- R1SimData_data_WSLS_basic[,subj]
+}
+
+
+```
+
+
+````{r}
+
+
+winProbAggrigate <- function(dataChoice, measure, subjIDs ){
+  
+  list_probs <- sort(unique(dataChoice$probWin))
+  
+  mean_act_probTrial1 <- matrix(nrow = length(list_probs), ncol = 8)
+  SD_act_probTrial1 <- matrix(nrow = length(list_probs), ncol = 8)
+  
+  for (i in 1:length(list_probs)) {
+    
+    winprob_act_subj <- matrix(nrow = length(subjIDs), ncol =  8, data = NA)
+    
+    for (n in 1:length(subjIDs)) {
+      temp_winProbAct <- dataChoice[dataChoice$probWin == subjIDs[i] &
+                                      dataChoice$subjID_anon == subjIDs[n], ]$act
+      
+      temp_length <- length(temp_winProbAct)
+      
+      winprob_act_subj[n,1:temp_length] <- temp_winProbAct 
+      
+    }
+    
+    mean_act_probTrial1[i,]<- apply(winprob_act_subj, 2, mean, na.rm = TRUE)
+  
+  }
+  mean_act_probTrial1_collapsed <- rbind(apply(mean_act_probTrial1[1:4,], 2, mean, na.rm = TRUE),
+                                         apply(mean_act_probTrial1[5:8,], 2, mean, na.rm = TRUE), 
+                                         apply(mean_act_probTrial1[9:12,], 2, mean, na.rm = TRUE))
+}
+
+
+
+list_probs <- sort(unique(DChoiceRobber1$probWin))
+
+
+mean_act_probTrial1 <- matrix(nrow = length(list_probs), ncol = 8)
+mean_bayes_probTrial1 <- matrix(nrow = length(list_probs), ncol = 8)
+mean_static_probTrial1 <- matrix(nrow = length(list_probs), ncol = 8)
+
+for (i in 1:length(list_probs)) {
+  
+  winprob_act_subj <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  winprob_bayes_subj <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  winprob_static_subj <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  
+  for (n in 1:length(listSubjID)) {
+    
+    temp_winProbAct <- DChoiceRobber1[DChoiceRobber1$probWin==list_probs[i] &
+                                        DChoiceRobber1$subjID==listSubjID[n], ]$act
+    
+    temp_winProbBayes <- DChoiceRobber1[DChoiceRobber1$probWin==list_probs[i] &
+                                          DChoiceRobber1$subjID==listSubjID[n], ]$simBasicBayes
+    
+    temp_winProbStatic <- DChoiceRobber1[DChoiceRobber1$probWin==list_probs[i] &
+                                           DChoiceRobber1$subjID==listSubjID[n], ]$simBasicStaticThresh
+    
+    
+    temp_length <- length(temp_winProbAct)
+    
+    winprob_act_subj[n,1:temp_length] <- temp_winProbAct 
+    winprob_bayes_subj[n,1:temp_length] <- temp_winProbBayes 
+    winprob_static_subj[n,1:temp_length] <- temp_winProbStatic 
+  }
+  mean_act_probTrial1[i,]<- apply(winprob_act_subj, 2, mean, na.rm = TRUE)
+  mean_bayes_probTrial1[i,]<- apply(winprob_bayes_subj, 2, mean, na.rm = TRUE)
+  mean_static_probTrial1[i,]<- apply(winprob_static_subj, 2, mean, na.rm = TRUE)
+  
+}
+
+
+SD_act_probTrial1 <- matrix(nrow = length(list_probs), ncol = 8)
+SD_bayes_probTrial1 <- matrix(nrow = length(list_probs), ncol = 8)
+SD_static_probTrial1 <- matrix(nrow = length(list_probs), ncol = 8)
+
+for (i in 1:length(list_probs)) {
+  
+  winprob_act_subj <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  winprob_bayes_subj <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  winprob_static_subj <- matrix(nrow = length(listSubjID),ncol =  8, data = NA)
+  
+  for (n in 1:length(listSubjID)) {
+    
+    temp_winProbAct <- DChoiceRobber1[DChoiceRobber1$probWin==list_probs[i] &
+                                        DChoiceRobber1$subjID==listSubjID[n], ]$act
+    
+    temp_winProbBayes <- DChoiceRobber1[DChoiceRobber1$probWin==list_probs[i] &
+                                          DChoiceRobber1$subjID==listSubjID[n], ]$simBasicBayes
+    
+    temp_winProbStatic <- DChoiceRobber1[DChoiceRobber1$probWin==list_probs[i] &
+                                           DChoiceRobber1$subjID==listSubjID[n], ]$simBasicStaticThresh
+    
+    
+    temp_length <- length(temp_winProbAct)
+    
+    winprob_act_subj[n,1:temp_length] <- temp_winProbAct 
+    winprob_bayes_subj[n,1:temp_length] <- temp_winProbBayes 
+    winprob_static_subj[n,1:temp_length] <- temp_winProbStatic 
+  }
+  SD_act_probTrial1[i,]<- apply(winprob_act_subj, 2, sd, na.rm = TRUE)
+  SD_bayes_probTrial1[i,]<- apply(winprob_act_subj, 2, sd, na.rm = TRUE)
+  SD_static_probTrial1[i,]<- apply(winprob_act_subj, 2, sd, na.rm = TRUE)
+  
+}
+
+
+````
+
+### With hist of win prob and legend
+
+```{r}
+
+valcol <- colorRamp(c('blue','red1'))
+
+ylim <- c(0,1)
+
+png(filename = "figures/winProb1_full_newHist.png", 
+    width = (700*2)+100, height = 1400)
+par(mfrow=c(3,2), oma = c(7,5,9,7), mar = c(2,5.5,.5,1), mgp = c(3,1,0))
+colRamp <- valcol(seq(0, 1, length.out = 12 ))
+y_heatmap <- c(((1:12)/30)-0.03)
+lineSize <- 2.5
+
+for (plot in 1:6) {
+
+  if(plot==1){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         xaxt= "n",
+         cex.axis = 3.3,
+         ylab = "",
+         family = "Arial"
+         )
+
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(mean_act_probTrial1[prob,], 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255),
+            lwd = lineSize)
+        
+      #legend heatmap
+        points(x = 8.1, y = y_heatmap[prob], 
+               pch = 15, cex = 8, 
+               col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255))
+      
+    }
+    #legend box
+    lines(x= rep(7,2), y= c(-0.1, y_heatmap[12]+0.04))
+    lines(x = c(7,8.5), y= rep(y_heatmap[12]+0.04, 2))
+    
+    text(x = 7.5, y = y_heatmap[12],"92.3%", xpd=NA,cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = y_heatmap[6], "46.2%",xpd=NA, cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = y_heatmap[1], "7.7%",xpd=NA, cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    
+    text(x = -0.3, y = 1.15, "e",
+         xpd=NA,
+         cex = 8, font = 2, family = "Arial",
+         outer= TRUE)
+    
+    # column label
+    text(x = 4.5, y = 1.1, "Robber Task",
+         xpd=NA,
+         cex = 5.5, font = 2, family = "Arial",
+         outer= TRUE)
+    
+  }
+  
+  
+  if(plot==3){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         xaxt= "n",
+         cex.axis = 3.3,
+         ylab = "",
+         family = "Arial"
+         )
+    
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(mean_bayes_probTrial1[prob,], col= rgb(red = colRamp[prob,1],
+                                               green = colRamp[prob, 2],
+                                               blue = colRamp[prob, 3], 
+                                               maxColorValue = 255),
+            lwd = lineSize)
+    }
+    #X label
+    mtext("P('Active')",
+          side = 2,
+          outer = TRUE,
+          cex = 3.5,
+          line = .8,
+          family = "Arial")
+  }
+  if(plot==5){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         cex.axis = 3.3,
+         ylab = "",
+         xaxt= "n",
+         family = "Arial"
+         )
+    axis(1, tick =TRUE,cex.axis = 3.3, mgp= c(3,1.8,0))
+    
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+  
+          # add the % trials for each trial
+    
+      lines(x = c(0.5,1:4), 
+            y = rep(1, 5)) #100%
+    
+      lines(x = 4:5, 
+            y = rep((length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/
+                      length(winprob_act_subj[,5]), 2)
+            )
+      
+      lines(x = 5:6, 
+            y = rep((length(winprob_act_subj[,6])-
+                           sum(is.na(winprob_act_subj[,6])))/
+                      length(winprob_act_subj[,6]), 2))
+    
+    lines(x = 6:7, 
+      y = rep((length(winprob_act_subj[,7])-
+                           sum(is.na(winprob_act_subj[,7])))/
+                length(winprob_act_subj[,7]), 2))
+    
+    lines(x = 7:8, 
+      y = rep((length(winprob_act_subj[,8])
+                         -sum(is.na(winprob_act_subj[,8])))
+              /length(winprob_act_subj[,8]), 2))
+    
+    # y lines
+    lines(x = rep(4,2), 
+          y = c(1,(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5])))
+    lines(x = rep(5,2), 
+          y = c((length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6])))
+    lines(x = rep(6,2), 
+          y = c((length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,6])))
+    lines(x = rep(7,2), 
+          y = c((length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,6])))
+    lines(x = rep(8,2), 
+          y = c((length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                0))
+    
+    lines(mean_static_probTrial1[prob,], 
+      col = rgb(red = colRamp[prob,1],
+                green = colRamp[prob, 2],
+                blue = colRamp[prob, 3], 
+                maxColorValue = 255),
+      lwd = lineSize)
+    
+    text(x = 2.5, y = 0.9, "100%",
+         xpd = NA,
+         cex = 3.3, font = 1, family = "Arial",
+         outer = TRUE)
+    text(x = 7.5, y = 0.05, "11%",
+         xpd = NA,
+         cex = 3.3, font = 1, family = "Arial",
+         outer = TRUE)
+    }
+    
+    mtext("Trial/Stim",
+      side = 1,
+      cex = 3.5,
+      line = 6,
+      family = "Arial")
+  }
+
+  
+  
+  if(plot==2){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         xaxt= "n",
+         yaxt= "n",
+         cex.axis = 3.3,
+         ylab = "",
+         family = "Arial"
+         )
+    axis(4, labels = FALSE, tck = 0.01)
+    for (prob in 1:nrow(mean_act_probTrial1F)) {
+      lines(mean_act_probTrial1F[prob,], 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255),
+            lwd = lineSize)
+        #heat map
+      points(x = 8.1, y = y_heatmap[prob], 
+       pch = 15, cex = 8, 
+       col = rgb(red = colRamp[prob,1],
+              green = colRamp[prob, 2],
+              blue = colRamp[prob, 3],
+              maxColorValue = 255))
+    }
+    #legend box
+    lines(x= rep(7,2), y= c(-0.1, y_heatmap[12]+0.04))
+    lines(x = c(7,8.5), y= rep(y_heatmap[12]+0.04, 2))
+    
+    text(x = 7.5, y = y_heatmap[12],"92.3%", xpd=NA,cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = y_heatmap[6], "46.2%",xpd=NA, cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = y_heatmap[1], "7.7%",xpd=NA, cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    
+    text(x = 0.3, y = 1.15, "f",xpd=NA ,cex = 8, font = 2, family = "Arial", outer= TRUE)
+    text(x = 4.5, y = 1.1, "Factory Task",xpd=NA, cex = 5.5, font = 2, family = "Arial", outer= TRUE)
+    text(x = 8.65, y = 0.5, "Data",xpd=NA ,cex = 5.5, font = 2, family = "Arial", outer= TRUE, srt = 270)
+
+    
+  }
+  
+  
+  if(plot==4){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         xaxt= "n",
+         yaxt= "n",
+         cex.axis = 3.3,
+         ylab = "",
+         family = "Arial"
+         )
+    axis(4, labels = FALSE, tck = 0.01)
+    for (prob in 1:nrow(mean_act_probTrial1F)) {
+      lines(mean_bayes_probTrial1F[prob,], col= rgb(red = colRamp[prob,1],
+                                               green = colRamp[prob, 2],
+                                               blue = colRamp[prob, 3], 
+                                               maxColorValue = 255),
+            lwd = lineSize)
+    }
+
+     text(x = 8.65, y = 0.5, "Bayesian Learner",
+          xpd=NA,
+          cex = 5.5, font = 2, family = "Arial",
+          outer= TRUE, srt = 270)
+  }
+  if(plot==6){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         cex.axis = 3.3,
+         ylab = "",
+         xaxt= "n",
+         yaxt= "n",
+         family = "Arial"
+         )
+    axis(4, labels = FALSE, tck = 0.01)
+    axis(1, tick =TRUE,cex.axis = 3.3, mgp= c(3,1.8,0))
+    
+    for (prob in 1:nrow(mean_act_probTrial1F)) {
+    lines(mean_static_probTrial1F[prob,], col= rgb(red = colRamp[prob,1],
+                                               green = colRamp[prob, 2],
+                                               blue = colRamp[prob, 3], 
+                                               maxColorValue = 255),
+          lwd = lineSize)
+    }
+    
+    mtext("Trial/Stim",
+      side = 1,
+      #outer = TRUE,
+      cex = 3.5,
+      line = 6,
+      family = "Arial")
+    
+    text(x = 8.65, y = 0.5, "Static Probability",
+         xpd=NA,
+         cex = 5.5, font = 2, family = "Arial",
+         outer= TRUE, srt = 270)
+    
+     # add the % trials for each trial
+    
+      lines(x = c(0.5,1:4), 
+            y = rep(1, 5)) #100%
+    
+      lines(x = 4:5, 
+            y = rep((length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/
+                      length(winprob_act_subj[,5]), 2)
+            )
+      
+      lines(x = 5:6, 
+            y = rep((length(winprob_act_subj[,6])-
+                           sum(is.na(winprob_act_subj[,6])))/
+                      length(winprob_act_subj[,6]), 2))
+    
+    lines(x = 6:7, 
+      y = rep((length(winprob_act_subj[,7])-
+                           sum(is.na(winprob_act_subj[,7])))/
+                length(winprob_act_subj[,7]), 2))
+    
+    lines(x = 7:8, 
+      y = rep((length(winprob_act_subj[,8])
+                         -sum(is.na(winprob_act_subj[,8])))
+              /length(winprob_act_subj[,8]), 2))
+    
+    #lines(x = rep(1,2), y = c(0.28, 0.45))
+    lines(x = rep(4,2), 
+          y = c(1,(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5])))
+    lines(x = rep(5,2), 
+          y = c((length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6])))
+    lines(x = rep(6,2), 
+          y = c((length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,6])))
+    lines(x = rep(7,2), 
+          y = c((length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,6])))
+    lines(x = rep(8,2), 
+          y = c((length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                0))
+    
+    
+    text(x = 2.5, y = 0.9, "100%",xpd=NA ,cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = 0.05, "11%",xpd=NA ,cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    
+  }
+  #abline(v = 4, lty = 3)
+}
+dev.off()
+```
+
+
+
+### With hist of win prob and legend
+
+```{r}
+
+valcol <- colorRamp(c('blue','red1'))
+
+ylim <- c(0,1)
+
+png(filename = "figures/winProb1_full_newHist_opacity.png", 
+    width = (700*2)+100, height = 1400)
+par(mfrow=c(3,2), oma = c(7,5,9,7), mar = c(2,5.5,.5,1), mgp = c(3,1,0))
+colRamp <- valcol(seq(0, 1, length.out = 12 ))
+y_heatmap <- c(((1:12)/30)-0.03)
+lineSize <- 2.5
+
+for (plot in 1:6) {
+
+  if(plot==1){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         xaxt= "n",
+         cex.axis = 3.3,
+         ylab = "",
+         family = "Arial"
+         )
+
+
+        yVals <- mean_act_probTrial1
+    
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(yVals[prob,1:4], 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,4:5], x = c(4:5), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,5:6], x= c(5:6), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,6:7], x= c(6:7), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,7]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,7:8], x= c(7:8), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    
+    #legend heatmap
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+        points(x = 8.1, y = y_heatmap[prob], 
+               pch = 15, cex = 8, 
+               col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255))
+      
+    }
+    #legend box
+    lines(x= rep(7,2), y= c(-0.1, y_heatmap[12]+0.04))
+    lines(x = c(7,8.5), y= rep(y_heatmap[12]+0.04, 2))
+    
+    text(x = 7.5, y = y_heatmap[12],"92.3%", xpd=NA,cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = y_heatmap[6], "46.2%",xpd=NA, cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = y_heatmap[1], "7.7%",xpd=NA, cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    
+    text(x = -0.3, y = 1.15, "E",
+         xpd=NA,
+         cex = 8, font = 2, family = "Arial",
+         outer= TRUE)
+    
+    # column label
+    text(x = 4.5, y = 1.1, "Robber Task",
+         xpd=NA,
+         cex = 5.5, font = 2, family = "Arial",
+         outer= TRUE)
+    
+  }
+  
+  
+  if(plot==3){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         xaxt= "n",
+         cex.axis = 3.3,
+         ylab = "",
+         family = "Arial"
+         )
+    
+    yVals <- mean_bayes_probTrial1
+    
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(yVals[prob,1:4], 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,4:5], x = c(4:5), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,5:6], x= c(5:6), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,6:7], x= c(6:7), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,7]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,7:8], x= c(7:8), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    
+    #X label
+    mtext("P('Active')",
+          side = 2,
+          outer = TRUE,
+          cex = 3.5,
+          line = .8,
+          family = "Arial")
+  }
+  if(plot==5){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         cex.axis = 3.3,
+         ylab = "",
+         xaxt= "n",
+         family = "Arial"
+         )
+    axis(1, tick =TRUE,cex.axis = 3.3, mgp= c(3,1.8,0))
+    
+  
+      # add the % trials for each trial
+    
+      lines(x = c(0.5,1:4), 
+            y = rep(1, 5)) #100%
+    
+      lines(x = 4:5, 
+            y = rep((length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/
+                      length(winprob_act_subj[,5]), 2)
+            )
+      
+      lines(x = 5:6, 
+            y = rep((length(winprob_act_subj[,6])-
+                           sum(is.na(winprob_act_subj[,6])))/
+                      length(winprob_act_subj[,6]), 2))
+    
+    lines(x = 6:7, 
+      y = rep((length(winprob_act_subj[,7])-
+                           sum(is.na(winprob_act_subj[,7])))/
+                length(winprob_act_subj[,7]), 2))
+    
+    lines(x = 7:8, 
+      y = rep((length(winprob_act_subj[,8])
+                         -sum(is.na(winprob_act_subj[,8])))
+              /length(winprob_act_subj[,8]), 2))
+    
+    # y lines
+    lines(x = rep(4,2), 
+          y = c(1,(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5])))
+    lines(x = rep(5,2), 
+          y = c((length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6])))
+    lines(x = rep(6,2), 
+          y = c((length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,6])))
+    lines(x = rep(7,2), 
+          y = c((length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,6])))
+    lines(x = rep(8,2), 
+          y = c((length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                0))
+    
+    text(x = 2.5, y = 0.9, "100%",
+         xpd = NA,
+         cex = 3.3, font = 1, family = "Arial",
+         outer = TRUE)
+    text(x = 7.5, y = 0.05, "11%",
+         xpd = NA,
+         cex = 3.3, font = 1, family = "Arial",
+         outer = TRUE)
+    
+    yVals <- mean_static_probTrial1
+    
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(yVals[prob,1:4], 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,4:5], x = c(4:5), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,5:6], x= c(5:6), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,6:7], x= c(6:7), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,7]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,7:8], x= c(7:8), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    
+    mtext("Trial/Stim",
+      side = 1,
+      cex = 3.5,
+      line = 6,
+      family = "Arial")
+  }
+
+  
+  
+  if(plot==2){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         xaxt= "n",
+         yaxt= "n",
+         cex.axis = 3.3,
+         ylab = "",
+         family = "Arial"
+         )
+    axis(4, labels = FALSE, tck = 0.01)
+    
+    yVals <- mean_act_probTrial1F
+    
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(yVals[prob,1:4], 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,4:5], x = c(4:5), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,5:6], x= c(5:6), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,6:7], x= c(6:7), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,7]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,7:8], x= c(7:8), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    
+    
+    for (prob in 1:nrow(mean_act_probTrial1F)) {
+        #heat map
+      points(x = 8.1, y = y_heatmap[prob], 
+       pch = 15, cex = 8, 
+       col = rgb(red = colRamp[prob,1],
+              green = colRamp[prob, 2],
+              blue = colRamp[prob, 3],
+              maxColorValue = 255))
+    }
+    #legend box
+    lines(x= rep(7,2), y= c(-0.1, y_heatmap[12]+0.04))
+    lines(x = c(7,8.5), y= rep(y_heatmap[12]+0.04, 2))
+    
+    text(x = 7.5, y = y_heatmap[12],"92.3%", xpd=NA,cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = y_heatmap[6], "46.2%",xpd=NA, cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = y_heatmap[1], "7.7%",xpd=NA, cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    
+    text(x = 0.3, y = 1.15, "F",xpd=NA ,cex = 8, font = 2, family = "Arial", outer= TRUE)
+    text(x = 4.5, y = 1.1, "Factory Task",xpd=NA, cex = 5.5, font = 2, family = "Arial", outer= TRUE)
+    text(x = 8.65, y = 0.5, "Data",xpd=NA ,cex = 5.5, font = 2, family = "Arial", outer= TRUE, srt = 270)
+
+    
+  }
+  
+  
+  if(plot==4){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         xaxt= "n",
+         yaxt= "n",
+         cex.axis = 3.3,
+         ylab = "",
+         family = "Arial"
+         )
+    axis(4, labels = FALSE, tck = 0.01)
+    
+    yVals <- mean_bayes_probTrial1F
+    
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(yVals[prob,1:4], 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,4:5], x = c(4:5), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,5:6], x= c(5:6), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,6:7], x= c(6:7), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,7]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,7:8], x= c(7:8), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+
+     text(x = 8.65, y = 0.5, "Bayesian Learner",
+          xpd=NA,
+          cex = 5.5, font = 2, family = "Arial",
+          outer= TRUE, srt = 270)
+  }
+  if(plot==6){
+    plot(1, 
+         type = 'n',
+         lty= 3,
+         ylim = ylim,
+         xlim = c(1, 8),
+         xlab = '',
+         las = 1,
+         #cex.lab = 2,
+         cex.axis = 3.3,
+         ylab = "",
+         xaxt= "n",
+         yaxt= "n",
+         family = "Arial"
+         )
+    axis(4, labels = FALSE, tck = 0.01)
+    axis(1, tick =TRUE,cex.axis = 3.3, mgp= c(3,1.8,0))
+    
+    yVals <- mean_static_probTrial1F
+    
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(yVals[prob,1:4], 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,4:5], x = c(4:5), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,5:6], x= c(5:6), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,6:7], x= c(6:7), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,7]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    for (prob in 1:nrow(mean_act_probTrial1)) {
+      lines(y = yVals[prob,7:8], x= c(7:8), 
+            col = rgb(red = colRamp[prob,1],
+                      green = colRamp[prob, 2],
+                      blue = colRamp[prob, 3],
+                      alpha = (255/6)+((255/6)*5)*(length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                      maxColorValue = 255),
+            lwd = lineSize)
+    }
+    
+    mtext("Trial/Stim",
+      side = 1,
+      #outer = TRUE,
+      cex = 3.5,
+      line = 6,
+      family = "Arial")
+    
+    text(x = 8.65, y = 0.5, "Static Probability",
+         xpd=NA,
+         cex = 5.5, font = 2, family = "Arial",
+         outer= TRUE, srt = 270)
+    
+     # add the % trials for each trial
+    
+      lines(x = c(0.5,1:4), 
+            y = rep(1, 5)) #100%
+    
+      lines(x = 4:5, 
+            y = rep((length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/
+                      length(winprob_act_subj[,5]), 2)
+            )
+      
+      lines(x = 5:6, 
+            y = rep((length(winprob_act_subj[,6])-
+                           sum(is.na(winprob_act_subj[,6])))/
+                      length(winprob_act_subj[,6]), 2))
+    
+    lines(x = 6:7, 
+      y = rep((length(winprob_act_subj[,7])-
+                           sum(is.na(winprob_act_subj[,7])))/
+                length(winprob_act_subj[,7]), 2))
+    
+    lines(x = 7:8, 
+      y = rep((length(winprob_act_subj[,8])
+                         -sum(is.na(winprob_act_subj[,8])))
+              /length(winprob_act_subj[,8]), 2))
+    
+    #lines(x = rep(1,2), y = c(0.28, 0.45))
+    lines(x = rep(4,2), 
+          y = c(1,(length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5])))
+    lines(x = rep(5,2), 
+          y = c((length(winprob_act_subj[,5])-sum(is.na(winprob_act_subj[,5])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,6])))
+    lines(x = rep(6,2), 
+          y = c((length(winprob_act_subj[,6])-sum(is.na(winprob_act_subj[,6])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,6])))
+    lines(x = rep(7,2), 
+          y = c((length(winprob_act_subj[,7])-sum(is.na(winprob_act_subj[,7])))/length(winprob_act_subj[,5]),
+                (length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,6])))
+    lines(x = rep(8,2), 
+          y = c((length(winprob_act_subj[,8])-sum(is.na(winprob_act_subj[,8])))/length(winprob_act_subj[,8]),
+                0))
+    
+    
+    text(x = 2.5, y = 0.9, "100%",xpd=NA ,cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    text(x = 7.5, y = 0.05, "11%",xpd=NA ,cex = 3.3, font = 1, family = "Arial", outer= TRUE)
+    
+  }
+  #abline(v = 4, lty = 3)
+}
+dev.off()
+```
