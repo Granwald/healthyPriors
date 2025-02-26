@@ -12,7 +12,7 @@ copyfile models/prior1_MS_2invT_F_actBias_mod_HBI.m
 logLike = zeros(length(fdata.data), 1);
 
 for s = 1:length(fdata.data)
-    logLike(s,:) = prior1_MS_2invT_F_actBias_mod_HBI(params(1,:),fdata.data{s});
+    logLike(s,:) = prior1_MS_2invT_F_actBias_mod_HBI(params(s,:),fdata.data{s});
 end
 
 R_chance = length(fdata.data{1}.act)*log(.5);

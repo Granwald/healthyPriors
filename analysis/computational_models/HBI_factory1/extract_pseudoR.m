@@ -12,7 +12,7 @@ copyfile models/staticProb_2Bias_mod_HBI.m
 logLike = zeros(length(fdata.data), 1);
 
 for s = 1:length(fdata.data)
-    logLike(s,:) = staticProb_2Bias_mod_HBI(params(1,:),fdata.data{s});
+    logLike(s,:) = staticProb_2Bias_mod_HBI(params(s,:),fdata.data{s});
 end
 
 R_chance = length(fdata.data{1}.act)*log(.5);
