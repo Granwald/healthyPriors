@@ -133,7 +133,7 @@ for s = 1:samples
     
     [act, success, Q_A] = nameOfModel_mod_sim(parameters, offers, noActValues, costs, tasks, winprobs, stimTrialList);
     
-    data(s,1) = {struct('act', act', 'success', success', 'task', tasks, 'offer', offers, 'cost', costs, 'noActValue', noActValues, 'stimTrialList', stimTrialList, 'parameters', parameters, 'winProb', winprobs, 'Q_act', Q_A, 'posAffect',posAffect)}
+    data(s,1) = {struct('act', act', 'success', success', 'task', tasks, 'offer', offers, 'cost', costs, 'noActValue', noActValues, 'stimTrialList', stimTrialList, 'parameters', parameters, 'winProb', winprobs, 'Q_act', Q_A)}
 end
         
 cd(WD)
